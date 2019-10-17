@@ -1,0 +1,143 @@
+jdbc   建立jav和数据库的连接  
+java提供了一系列的接口 比如DriverManager connertion接口
+然后让各种数据库 比如sql oracal 去提供实现这些接口的各种函数
+比如要连接mysql  要去下载mysql提供的一个连接器库 
+以mysql为例子
+下载mysql的jdbc连接器库
+第一步
+导入文件   build path
+然后创建java项目
+1注册连接驱动
+DriverManager.registerDriver(Driver);
+这里面的参数要求传入一个实现了java中Driver接口的类
+在mysql的库中 有一个Driver类实现了这个接口  
+因此  导入这个类  
+然后new Driver() 即可
+DriverManager.registerDriver(new Driver());
+或者
+DriverManager.registerDriver(new com.mysql.jdbc.Driver());
+这是不导入包 直接用.的形式使用类
+
+2建立连接
+DriverManager.getConnertion(参数是地址+用户名+密码);
+比如
+DriverMnager.getConnection("jdbc:mysql://localhost/sales","root","root");
+前面是协议名 +主机+具体据库
+由于这个get函数会返回一个Connertion类的对象
+Connection 对象的数据库能够提供描述其表、所支持的 SQL 语法、存
+储过程、此连接功能等等的信息
+Connection c =DriverMnager.getConnection("jdbc:mysql://localhost/sales","root","root");
+
+3statement对象是和数据库打交道必须创建的对象
+connetion类有一个createStatement()方法 返回Statement()类
+这个类提供方法发送sql语句到数据库
+Statement s = new c.createStatement();
+
+4.查询
+ResultSet r=s.excuteQuery(sql语句);
+statement类里卖弄的excuteQuery方法提供查询功能
+这个方法返回一个结果集合 查询结果的集合
+
+5  ResultSet 这个集合得到的是元组的集合 也就是行的集合
+
+这个集合它访问的方式
+和list不同的是   这个结果集合访问的时候 通过next()函数移动
+光标到下一行(返回值是一个boolean,假如没有下一行了会返回false)  然后通过getxxx方法得到这一行的每一个属性值
+一个属性用一个get  假如一行有五个属性 要调用五次get去得到
+这些属性的值
+比如sales数据库里面agents表  有四个属性  
+通过rs.next()将光标移到下一行 实现不同行的遍历
+对不同属性使用不同的get函数
+rs.getString("cid");  得到cid当前行的值 然后以String的形式返回
+String cid = rs.getString("cid");
+假如没有使用next  光标会一直停留在这一行  并且这个函数会返回
+bollean  所以一般直接放在在while里面使用 既可以判断也可以执行
+下一行功能
+
+6 释放连接  rs.close() c.close(); s.close();  
+以打开的方式反序释放
+
+注意事项  statement connection 都是接口
+  定义工具类的时候注意  不同包下的类使用的时候需要导包
+  或者导入这个类
+  同一个包下的类使用的时候不需要导包 类的使用方式还是需要
+  创建对象 除了static对象
+
+
+注册驱动升级:
+Class对象里面有个forName静态方法  
+Class.forName(String Str);
+返回与带有给定字符串名的类或接口相关联的 Class 对象。
+也就是说通过这个方法以另类的方式创建了一个对象
+str一般是某个类的全路径名称 
+Class在lang包下  它不需要导包 使用静态方法即可
+
+
+由于在mysql提供的重写Driver类中 它包含一个静态代码块
+这个代码块实现了驱动的注册  因此不需要调用DriverManager.register
+直接创建这个对象 此时由于类加载了静态代码块会执行
+所以class.forName(String Str);创建对象时 会注册驱动
+
+在Java中嗯都文件路径问题
+一个是 直接在项目的根目录下的相对路径 必须是根目录
+一个是据对  盘符 d:\\文件名\文件\
+关于文件输入输出
+
+一切都以java程序为主体  向文件怎么怎么样
+write  写  向文件写东西  也就是输出 把自己的东西输出到文件
+read  读  从文件读东西 也就是输入  从问文件中读取然后输入
+
+white - output  输出
+read -input  输入
+
+
+Class 类  
+字节码类  任何一个对象都有class这个属性  表示它的字节码对象
+Class就是源码编译后的字节码对象 
+源文件位于src中 class位于bin录下
+classload会加载bin下的所有类以及其他文件资源
+
+而由于bin下的文件是经过编译后的src文件  所以 
+我们只需要将文件放在src中编译后会出现在bin中  
+然后利用classload的getResourceStream()可以得到某个
+文件的文件流  这是复杂的方法
+
+得到某个文件的文件流  只需要 将这个文件放在项目根目录下
+然后 
+InputStream is = new FileinputStream(url);
+
+或者
+InputStream is = 某个类.class.getClassloader().get....
+这里的这个某个类 值的是 想要得到的那个文件是和那个类在一起的
+任选一个类 即可 因为这些在同一src下的类的类加载器是同一个
+但是要注意的是  使用其他类要先导包!!!!! 直接用本类即可
+
+注意 所谓的连接类型 就是指连接的那种数据库
+不同的数据库 它们对Driver驱动接口的实现方式不一样
+当数据库更换时 我们注册Driver方式的名字不同
+在mysql中 实现Driver接口的类
+ 是这个   com.mysql.jdbc.Driver
+ 因此用class.forname去加载它就行  它内部代码会进行注册
+ 
+properties 类  属性配置类 
+可以在一个文件中按照指定格式
+比如   key=value   
+       key2=value2
+这种格式书写
+然后用属性类的方式去加载这个文件 就可以读取相关值
+
+1创建对象
+2 上文中 创建指定文件的输入流 input 因为是读文件
+3使用load()函数加载这个输入流
+4然后用getProperity("key")
+
+然后以后要改相关值的时候只需要改配置文件即可
+
+
+
+
+
+
+
+
+
