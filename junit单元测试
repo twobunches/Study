@@ -1,0 +1,63 @@
+测试不一定需要在main里面测试
+可以使用junit单元测试  
+先创建一个测试Text类文件
+然后导入junit包  
+右键项目 然后build path 添加路径
+然后点击add library  添加库选择单元测试库
+之后 再测试类中 写一个方法 将测试的代码放进去
+然后顶部添加@junit注解  随后就可以测试了
+每一个要用junit测试方法都要加上@Text注解  
+另外添加注解后要导包
+ 
+jdbc过程   以连接mysql为例子
+1 注册登记
+  Class.forName("com.mysql.jdbc.Driver");
+  这里的com.mysql.jdbc.Driver指的是 导入的mysql连接驱动中
+  Driver类的完整路径
+  或者
+  DriverManager.registerDriver("com.mysql.jdbc.Driver");
+  这样也可以
+2建立连接
+DriverManager.getConnection(
+"jdbc:mysql://localhost/sales",  
+"root用户名",
+"root密码"
+);
+一共三个参数  第一个是要连接的数据库地址url
+第二个是用户名  第三个是密码
+然后这个方法返回一个Connection对象
+
+
+Connection conn = DriverManager.getConection(........);
+
+3.建立了连接后怎么与数据库交互?
+Statement 类提供交互功能  它的对象通过connection对象的方法实现
+Statement s = conn.createStatement();
+
+4  使用statement的类中方法 经行交互
+   executeQuery(str);提供查询功能 返回一个ResultSet  结果集合类
+   以行为基本单位  然后用getxxx()方法分别得到每一行的数据
+   比如 getInt("id");  得到当前行id 的值 返回int类型
+   
+   executeUpdate(sql) 用来插入功能  返回受影响的行数
+   sql就是一个sql语法的字符串
+   这个方法也可以用于删除 以及更新
+   比如 String sql = "delete from agents where aid = 'a07
+   
+  也就是说executeUpdate()方法 支持数据操纵 的三个功能
+  delete update insert  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
