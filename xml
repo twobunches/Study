@@ -40,6 +40,181 @@ xml的cdata区域
 某些内容 不让它成为标签
 可以将这一段内容放在<![CDATA[  内容  ]]> 格式就是这样的
 
+在java中的xml的解析方式
+1dom解析方式
+dom解析会将整个xml解析成一个树状结构
+和html类似  有元素节点 属性节点 文本节点
+这个树状结构就是document对象
+dom方式可以对文档经行增删操作
+
+2SAX解析  simple API for xml
+基于事件驱动  读一行,解析一行
+sax方式只能查询
+
+针对这两种解析方式,有以下常用的解决方案
+1 dom4j  使用广泛
+2 jdom
+3 jaxp  
+
+使用dom4j
+和使用jdbc方式一样  首先要下载dom4j的API的jar包
+添加到java项目中去
+bulid path 
+
+dom4j的jar提供了一系列的API
+DOMReader 类 以dom方式解析
+SAXReader 类以sax方式解析
+
+仔细区分和文件相关的类
+1:File类  其实和文件的读写无关 
+是文件和目录路径名的抽象表示形式。,java中用File对象引入文件 
+
+2FileReader FileWrite 
+文件读写类 这个才是与文件输出输出有关的类
+但是它们并不继承于File
+它们继承于InputStreamReader OutputStreamWriter
+
+3FileInputSteam FileInutSream
+文件输出流 与文件 输出流 这里通过所给路径创建io流
+继承于InputStream OutputStream
+
+
+4InputStream OutputStream
+输入流与输出流  是两个抽象类  继承于object
+
+
+区分文件和流关系
+可以将文件转化为流,比如FileInputStream
+
+java和html中的相对路径有点不一样
+html文件的相对路径是从当前html文件所处位置开始
+而java默认是从项目的根目录文件开始
+
+
+SAXReader 对象的 read()函数可以读取文件
+参数可以是路径 可以是文件  也可以是一个流
+该函数读取之后返回一个document对象  这个对象的基础dom4j的
+返回的这个document类是定义在我们导入的dom4j包中的
+org.dom4j.Document
+
+
+1SAXReader()
+
+SAXReader reader = new SAXReader();
+Document document = reader.read(参数为文件 流 或者url);
+通过返回的document对象 调用函数  去读取xml里的内容
+document对象 的getRootElement()函数可以得到根元素
+返回值是Element对象
+
+Element e = document.getRootElement();
+这个对象的element方法可以得到一个元素下的子元素
+
+
+但是element能得到指定的一个子元素
+element()必须要有参数
+比如 element("stu");得到某个元素下 名字为stu的子元素
+但是要注意 虽然只能了stu 但是如果stu元素有很多个
+只能返回第一个stu元素
+
+elements()方法可以返回所有的子元素对象 也就是返回了一个list集合
+getText()可以得到元素中文本的值
+getName()可以获得当前元素对象的名字
+elements()没有参数 他是直接获得了全部的子元素
+
+element适用于嵌套不多的时候,因为他是一层一层访问的
+
+当嵌套较多时
+需要使用Xpath,xpath是xml的路径语言,支持我们在解析xml的时候
+能够快速定位到某一个元素 而不是一层一层访问
+使用xpath需要支持他的jar文件 也就是扩展的API
+
+使用Element元素中的selectsinglenode(参数)或者nodes()对象
+参数就是xpath
+调用这个选择节点的元素对象一般是 根元素 最外层的那个元素
+xpath的书写方式
+/标签名/标签名... 单斜杠类似文件的路径
+//标签  双斜杠直接定位
+
+返回的节点对象要强制转化为element对象  因为element继承于node
+
+selectNodes("xpath格式的路径字符串");
+selectSingleNode("xpath");
+比如
+selectNodes("/AAA/BBB/ccc");
+寻找根元素aaa元素下所有bbb元素中的所有ccc元素
+selectNodes("//ccc")
+寻找所有的ccc元素
+双斜杠带元素名 可以直接搜寻所有元素
+单斜杠/需要 通过层级关系来搜寻 但是这种层级关系 和elements不一样
+element需要重复调用 而select是将路径用层级关系表示了出来
+
+xml的约束 两种1DTD  2schema
+约束就是使用一定语法规定xml中的元素规范 包括文本 属性之类的
+比如约束每个stu中的name元素只能出现一个
+
+xmlDTD  
+文档类型定义
+语法自成一派,早起就出现,可读性差,但是内容少
+约束
+<!ELEMENT >规定元素标签
+比如<!ELEMENT name(#PCDATA)>
+规定name元素为一般元素
+<!ELEMENT stu (name,age)>
+规定stu属性 必须有name和age属性 并且必须唯一
+重点!!!!!!!!!!!!!!!!!!!!
+在<!ELEMENT > 这个规定元素的标签中
+元素名字  以及条件之间必须要有空格
+比如 <!ELEMENT stu (name,age)>
+stu是元素名  后面是它的规范  它们之间必须要有空格!!!!!!!!!!
+血一样的教训
+
+还有一点 假如在DTD中没有涉及的属性 元素一律不能添加,在xml中只能按照dtd的格式书写
+属性不能多,也不能少,标签不能多,也不能少
+
+
+
+在xml中怎么引入dtd文件
+<!DOCTYPE   stus        PUBLIC        "...."      "路径">
+  文档类型  根标签名字   网络上的dtd    dtd文件的名称 dtd路径
+引入网络上的dtd
+<!DOCTYPE   stus    SYSTEM  "路径">
+这个是引入系统中的dtd文件
+
+或者直接内嵌一个dtd
+<!DOCTYPE stus[
+内容
+
+
+]>
+
+
+
+
+
+xml schema  定义文档的合法构建模块
+其实是一个xml,使用xml的语法规则
+定义可出现在文档中的元素 属性 定义那个元素是子元素 
+子元素的次序 数目 是否为空..
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
