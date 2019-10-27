@@ -164,7 +164,7 @@ xmlDTD
 重点!!!!!!!!!!!!!!!!!!!!
 在<!ELEMENT > 这个规定元素的标签中
 元素名字  以及条件之间必须要有空格
-比如 <!ELEMENT stu (name,age)>
+比如 <!ELEMENT stu (name,age)>   (name|age) 表示元素标签二选一
 stu是元素名  后面是它的规范  它们之间必须要有空格!!!!!!!!!!
 血一样的教训
 
@@ -187,6 +187,24 @@ stu是元素名  后面是它的规范  它们之间必须要有空格!!!!!!!!!!
 
 
 ]>
+通配符
++ 一个或多个
+* 0个或多个
+? 0个或一个
+
+<!ATTLIST 元素名 属性名 类型 值>
+修饰值的类型
+#IMPLIED 不是必须的
+#REQUIRED 必须的
+#FIXED 固定的值
+
+类型常用两种
+ID 唯一的
+CDATA 普通字符串
+
+
+
+
 
 
 
@@ -197,12 +215,68 @@ xml schema  定义文档的合法构建模块
 定义可出现在文档中的元素 属性 定义那个元素是子元素 
 子元素的次序 数目 是否为空..
 
+schema文件的后缀为xsd文件
+<?xml version="1.0" encoding="UTF-8"?>
+<schema  xmlns="http://www.w3.org/2001/XMLSchema" 
+		 targetNamespace="http://www.example.org/stus"
+		 xmlns:tns="http://www.example.org/stus" 
+		 elementFormDefault="qualified">
+</schema>
+用来约束的xml是xsd文件  而被约束的文件称为实例文件
+
+
+
+ targetNamespace 目标名称空间  这是是指当这个xsd被用来约束某个
+ 文件是 这个文件需要一个命名空间 这个命名空间就是约束文件中的
+ 目标名称空间
+xmlns  指的是xml名称空间(命名空间) 是什么意思呢?
+schema.xsd本身也是一个xml文件 它用来约束xml文件
+但是里面用来约束的标签都是固定的 而这个xmlns就是约束xsd文件的
+一个标准 
+区分:
+名称空间xmlns:里面放的是约束本文件的xsd文件的目标名称空间
+目标名称空间:里面放的是当它作为一个约束文件的时候 被别人引用时
+需要些的地址
+
+为什么会有名称空间和目标名称空间呢?
+当一个xml引入一个dtd文件使用的<!doctype>  但是dtd文件只能引入一个
+而名称空间 则可以是多个 这就是区别
+
+
+在xml中引入xsd
+在跟标签中写入一下属性
+1  xmlns:xsi="http"这个是固定的  表名这是一个实例文件
+2  xmlns = "" 这里就要写上xsd约束文件的目标名称空间的值
+3  xsi:schemaLocation="xsd目标名称空间 xsd的地址(相对绝对都可以)"
 
 
 
 
+用来规范简单元素的写法
+<element name="" type = ""/> 定义一些只有文本内容的标签
+只需要写明元素名称和类型即可
+复杂元素
+<element name = "" type = "">
+  <complexType>
+      <sequence>
+          这里面就是简易元素
+     </sequence>
+  </complexType>
+</element>
+
+也就是如果要申明一个复杂元素 
+那么在这个复杂元素里面 比如使用<complexType>标签 来申明这是一个
+复杂标签
+在<complexType>标签中  嵌入<sequence>标签
+在这个标签中放入简易元素
+<sequence>这个表示里面的简易元素是按照一定顺序的
+这个标签中的 maxOccurs 和minOcuuur属性可以规定元素出现的次数
 
 
+在scheme中规定元素的属性
+<attribute name= type = ></attribute>
+简易元素无法申明属性
+所以属性申明是放在<complexType>标签里面的 并且放在最后 位于<sequence>的下面
 
 
 
