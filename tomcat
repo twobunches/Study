@@ -33,3 +33,12 @@
 然后新建web项目将项目发布到服务器即可  eclipse注意发布的web项目位于wtpwebapp文件夹中  myeclipse是位于webapp中
 
 :8080端口默认访问webapp的root或者wtpwebapp的root  
+
+
+
+
+
+
+
+
+
