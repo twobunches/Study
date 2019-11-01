@@ -1,0 +1,257 @@
+httpwatch ie的一个插件 是一个抓包工具 
+记录当前状态 然后会抓取http请求和回应
+http请求数据:
+POST /examples/servlets/servlet/RequestParamExample HTTP/1.1
+
+Accept: application/x-ms-application, image/jpeg, application/xaml+xml, image/gif, image/pjpeg, application/x-ms-xbap, */*
+Referer: http://localhost:8080/examples/servlets/servlet/RequestParamExample
+Accept-Language: zh-CN
+User-Agent: Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)
+Content-Type: application/x-www-form-urlencoded
+Accept-Encoding: gzip, deflate
+Host: localhost:8080
+Content-Length: 28
+Connection: Keep-Alive
+Cache-Control: no-cache
+
+firstname=zhang&lastname=san
+
+一:
+http请求数据解释(发送的http请求)
+请求行:
+POST /examples/servlets/servlet/RequestParamExample HTTP/1.1
+post 代表请求方式
+/examples/servlets/servlet/RequestParamExample
+这个是请求的地址路径,就是要访问哪个地方
+
+请求头:
+中间的那一部分:
+accept:客户端向服务器表示,我能支持什么类型的数据
+referer:完整的请求的地址路径
+Accept-Language:支持的语言格式
+User-Agent 用户代理 
+Content-Type:发送请求中内容的类型 提交的数据类型 这里是一个表单
+Accept-Encoding:能接受的数据类型格式
+host:代表访问的电脑
+
+请求体:firstname=zhang&lastname=san
+浏览器真正发送给服务器真正的数据
+比如注册页面的http请求 点击注册后会转到另外一个页面
+很明显注册页面发送的是用户的各种信息的填写数据
+这里的zhang 和san是input框中输入的value值 前面那个first是
+输入框的名字  也就是ipput框的name属性值
+
+
+二:http请求数据解释
+HTTP/1.1 200 OK
+
+Server: Apache-Coyote/1.1
+Content-Type: text/html;charset=ISO-8859-1
+Content-Length: 670
+Date: Fri, 01 Nov 2019 06:47:15 GMT
+
+<html>
+<head>
+<title>Request Parameters Example</title>
+</head>
+<body bgcolor="white">
+<a href="../reqparams.html">
+<img src="../images/code.gif" height=24 width=24 align=right border=0 alt="view code"></a>
+<a href="../index.html">
+<img src="../images/return.gif" height=24 width=24 align=right border=0 alt="return"></a>
+<h3>Request Parameters Example</h3>
+Parameters in this request:<br>
+First Name:
+ = zhang<br>
+Last Name:
+ = san
+<P>
+<form action="RequestParamExample" method=POST>
+First Name:
+<input type=text size=20 name=firstname>
+<br>
+Last Name:
+<input type=text size=20 name=lastname>
+<br>
+<input type=submit>
+</form>
+</body>
+</html>
+
+响应行:HTTP/1.1 200 OK  代表支持请求的版本
+协议版本
+状态码 
+200:代表成功,正常处理,得到数据
+403:拒绝
+404:Not found 失败
+500:服务器异常
+
+
+响应头:
+
+
+
+响应体:内容
+
+三:get和post请求的区别
+GET /examples/servlets/servlet/RequestParamExample?firstname=li&lastname=si HTTP/1.1
+Accept: application/x-ms-application, image/jpeg, application/xaml+xml, image/gif, image/pjpeg, application/x-ms-xbap, */*
+Accept-Language: zh-CN
+User-Agent: Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)
+Accept-Encoding: gzip, deflate
+Host: localhost:8080
+Connection: Keep-Alive
+
+第一点 它们的请求地址不一样 
+post方法,在url后面不跟上任何的数据,
+get请求在url后面跟上数据以?隔开,所以有安全隐患
+所以在向服务器提交数据使用post,当不需要提交数据的时候可以使用get
+并且get地址栏能够带的数据有限,1kb左右
+
+
+
+第二点带上的数据不同
+post请求使用流的方式写数据,get请求是在地址栏上写数据
+
+第三点
+post方式采用流传输数据,需要一个content-length的参数 也就是长度
+
+
+四web资源
+1静态资源
+ 比如html,js,css文件,它的内容不会改变
+2动态资源
+   servlet/jsp
+#servlet是什么?
+servlet就是一个运行在web服务器的小型java小程序,通过http来接受
+和响应客户端的http请求,用于动态页面的技术
+那么很明显servlet提供功能,由我们来写,它是java中的一个接口
+功能由我们来实现
+
+
+
+客户端访问服务器的东西其实都需要写servlet,但是现在静态的页面不用自己
+写,比如tomcat自带了一个defaultServlet的java程序
+
+使用Servlet的过程
+1在web的java工程中 新建类 去实现servlet接口
+一共有五个要重写的方法,最重要的 service方法
+
+2配置servlet 不配置怎么使用呢?
+用于告诉服务器,有哪些servlet
+配置方法:
+在这个web项目的web-Inf文件夹的web.xml文件根元素中添加以下节点
+  <servlet>
+  <servlet-name>HelloServlet</servlet-name>
+  <servlet-class>/HelloWeb/src/com/study/servletdemo/HelloServlet.java</servlet-class>
+  </servlet>
+ 
+第一个servletname是要配置的servlet实现类的名字
+第二个是servletclass是该实现类的全路径名称 也就是包名.类名的结构
+(不同的web项目很明显要实现的servlet不一样,所以配置在每个项目各自的web-inf文件下,
+而不是配置在服务器中)
+
+ <servlet-mapping>
+  <servlet-name>HelloServlet</servlet-name>
+  <url-pattern>/a</url-pattern>
+ </servlet-mapping>
+注册了servlet后 还需要一个映射关系  第一个是注册的servlet名字 
+第二个是在地址栏上的path 它对应着这个setvlet
+(每一个web项目在tomcat的wtpwebapp中建立了一个文件夹)
+
+3使用servlet,在每一个项目的web-inf的webxml文件中看到该项目的所有
+servlet然后调用方式以下方式:
+
+http://localhost:8080/HelloWeb/a
+
+4执行过程
+比如  在地址栏输入http://localhost:8080/HelloWeb/a
+这里先找到tomcat服务器
+,找到项目文件夹,这个HelloWeb是本项目的名称
+然后找到/a url模式对应的servlet名字
+然后找到这个servlet对应的实现类
+找到这个servlet类后开始创建这个类的实例
+然后开始执行里面的service方法
+(这个执行的service方法是在java中执行的)
+以上就是Servlet的执行过程
+
+
+5servlet是一个接口 
+genericServlet 是一个实现了servlet的抽象类 这个类实现了Servlet中的
+所有方法
+而HttpServlet(用于处理http请求)是继承了genericServlet 的一个抽象类
+所以当我们只是用servlet中的一种方法的时候 
+只需要继承HttpServlet然后 重写某一个就行 因为genericServlet已经全部
+实现了
+
+但是在HttpServlet中一般重写的是doget和dopost方法
+get方法会到doget方法 post请求会到post方法
+
+servlet最好写的方式
+定义一个累继承HttpServlet抽象类 重写doget 和dopost方法
+
+6servlet的生命周期 其实是它实现类的生命周期
+指servlet从创建到销毁的时期
+
+生命周期方法 
+lervlet从创建到销毁中  用的的方法
+
+servlet中的方法
+1:init方法 会在servlet实现类的实例被创建的时候调用
+servlet实现类在被初次调用的时候会被加载
+结论:在服务器启动之后,如果调用了某个servlet类 并实例化后
+这个实例化过程只会执行一次 因此init只会执行一次
+2:service方法 
+接受一次请求就会调用一次service方法
+3 destory()方法
+会在servlet的对象被回收时候调用一次
+   3.1当这个项目从tomcat中移除后servlet的对象就被回收了
+   3.2使用shutdown程序正常关闭服务器时该对象被回收
+
+7提前初始化Servlet
+1默认情况下init方法只有Servlet初始化才能执行,假如这个方法里面要执行一些
+初始化工作,甚至是一些比较耗时的逻辑
+2那么初次访问servlet的时候就比较耽误
+3所以就可以提前初始化Servlet
+方法:
+在配置Servlet的时候 在Servlet标签中
+出了name和class之外 再加上一个标签
+<load-on-startup>数字</...>
+这个数字代表每个Servlet初始化的顺序 越小越先初始化
+从2开始 因为1被tomcat用掉了
+
+8重要的api ServletConfig
+  Servlet配置对象
+   通过这个对象可以获得servlet在配置的时候的一些信息
+  ServletConfig config = getServletConfig();
+  这个get方法在重写httpservlet的类中可以直接用是因为
+ 这个类继承了httpservlet 那么子类可以直接使用父类的方法 不需要对象调用
+  config.servletName();可以得到这个servlet的的名字
+  但是注意 这个名字病不是我们重写的类名  而是配置的时候写的名字
+  config.getInitParamter(参数名);可以根据参数名获得初始化参数的值(string) 
+  如果这个参数不存在会返回一个null 空指向
+  config.getInitparamterNames();获得所有参数名称
+  这个参数是什么呢?
+  在配置servlet的时候里面还有一种标签
+  <init-param>
+    <param-name>address</param-name>
+    <param-value>北京</param-value>
+  </init-param>
+  可以有多个参数标签
+自定义抛出一个异常(throw new Exception(""))
+记住  各种异常都是类  所以应该new一个异常对象在抛出去
+
+ServletConfig的作用
+假如未来我们自己开发一些东西使用一些技术,但是我们不会,但是有人
+写出来了,他的代码放置在了自己的servlet类中并打包成jar中
+(使用别的jar包导入web项目中 只需要将它放在web-inf文件夹的
+lib中即可)
+并且这个servlet里面有某些必须的参数是必须的 但是不是固定值
+此时就要求我们使用这个servlet的自己去定义这个参数 那么可以用
+可以在servlet的类中使用config类来检查 使用者是否注册了这些属性
+
+
+
+
+
+
