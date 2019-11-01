@@ -1,0 +1,35 @@
+怎么在tomcat上发布项目 并且访问它
+一:将项目放在tomcat安装目录下的webapps文件夹中
+默认端口:8080是webapp/Root文件夹  所以可以将文件放在root文件夹中
+然后  localhost/文件名即可访问
+8080默认会访问root  如果不想默认
+就在webapp中新建一个文件夹 然后将项目放进去 这样这可以 
+
+二:如果不想将项目移动放入tomcat中 也可以
+设置虚拟路径
+在conf(属性配置文件)中的serve.xml文件中 向Host元素节点添加
+一个Context节点
+如:<Context docBase="项目的完整路径" path="/a"></Context>
+这里的path就是虚拟路径,任意以/开头的自定义路径 它对应着dcoBase真实路径
+
+比如  localhost:8080/a/项目名字  因为/a实际不存在 所以叫做虚拟路径 它对应着真实的位置
+
+三:
+在conf/[engin]/[hostnamse] 的文件夹中添加一个xml文件 这里的[]是conf中的两个文件夹  具体名字看serve.xml终的元素节点 然后
+将上述节点添加进去即可 但是zhegecontext节点不需要添加path属性
+访问    localhost:8080/包含该路径的xml文件名字/项目名字
+
+第二种方法就是用一个文件名代替了虚拟路径名 如果有很多项目 很明显建立多个xml文件存放不同路径 查看哪个项目就用哪个文件名
+
+
+让其他电脑访问 就将localhost换成本电脑的ip地址即可
+
+
+在eclipse上面配置tomcat
+不能先创建web项目 然后发布到server 配置服务器 顺序错了
+
+先配置服务器  进入javaee中  在下面的srver中new 一个新的服务器 一直下一步即可  然后更改javaweb的存在位置
+
+然后新建web项目将项目发布到服务器即可  eclipse注意发布的web项目位于wtpwebapp文件夹中  myeclipse是位于webapp中
+
+:8080端口默认访问webapp的root或者wtpwebapp的root  
