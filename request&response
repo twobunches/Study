@@ -195,7 +195,24 @@ servlet就像是一个文件,可以访问,在超链接中也可以访问一个se
 比如
 <a href=="servlet地址?name=123">链接</a>
 相对路径或者绝对路径  需要注意的是 参数的值不需要双引号 因为是默认的字符串
+在tomcat中使用流泪去得到某写文件的流,路径不能想当然的认为就是默认相对路径是这个项目名称
+input之类的类它们默认的其实路径是java项目文件,但是java是托管到tomcat中的,所以这个路径
+要用servletcontext中的getRealPath或者getresourasstream(当然这个流是输入流)
 
+在servlet中getoutputstream得到的那个输出流对象,其实就是servlet默认跳转的页面,所以用write函数
+写东西才会显示在这个页面上
+
+
+
+response回应的内容就是write函数写的内容,比如要直接回应一个图片,先以流的方式读取这个图片,然后
+再将这个流用write全部输出到这个servlet默认跳转的页面
+
+response的头 中 Location 可用于重新定向跳转到那个页面
+Content-type是设置响应内容
+Content-Dispotion用于处理内容以什么形式展示
+默认是输出到跳转页面
+setHeader("Content-Disposition","attachment;filename=文件名字")
+这个可以设置响应内容以附件的形式展示,也就是下载
 
 
 
