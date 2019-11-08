@@ -156,6 +156,44 @@ post请求以流的方式传输数据,但是request的get方法取参数的时�
 设置一utf8方式去取请求体  这个方式不适合于get方式
 因为get方式没有请求体
 
+六：
+请求和响应的中文乱码解决方案
+request：
+get请求：由于是在url后面添加数据，所以无法通过设置请求体的编码格式来解决
+因为tomcat默认使用ISO-8859-1解码，而浏览器发送过来的应该是UTF-8的字节流
+所以将通过ISO-8859-1解码的字符串重新编程字节流
+比如 request.getParameter("number").getBytes("");
+然后通过String的构造方法  new String（字节数组,"UTF-8"）
+将这个字节数组转化成以UTF—8解码的字符串
+
+
+post请求:这个就简单了 直接设置请求体的解码格式为UTF-8即可  对应api为setCharacerSet()
+
+
+response:
+字符流输:  getWrite().Write("字符串");  
+由于默认为以iso的方式发送这个字符串,所以需要先设置发送编码
+response.setCharacterSet("UTF-8");
+然后保证万无一失  设置告诉浏览器以什么方式解析这个字节流
+response.setHeader("Content-Type","text/html;character=utf-8");
+
+字节流:
+response.getOutoutsream().write("字符串".getBytes(""));
+getBytes默认以utf8方式转化为字节数组 也可以指定参数
+然后还是要设置告诉浏览器 发送过来的内容以什么方式解析
+response.setHeader("Content-Type");
+
+或者response有一个统一的解决方案:
+response.setContentType("text/html;charset=utf-8");
+这个方方法不仅告知浏览器以什么方式解码 并且也以这种方式发送内容
+
+
+
+
+
+
+
+
 
 
 
