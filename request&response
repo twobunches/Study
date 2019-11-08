@@ -187,9 +187,14 @@ response.setHeader("Content-Type");
 response.setContentType("text/html;charset=utf-8");
 这个方方法不仅告知浏览器以什么方式解码 并且也以这种方式发送内容
 
-
-
-
+七:
+访问tomcat上的静态资源的时候会使用tomcat一个默认的defaultServlet去处理他们的
+servlet就像是一个文件,可以访问,在超链接中也可以访问一个servlet
+超链接中不仅仅只能写一个网址(实质就是一个文件),可以是某个文件的路径,也可以是一个servlet的地址
+在url后面加上?file 代表的是一个get请求,在地址后面附加了数据
+比如
+<a href=="servlet地址?name=123">链接</a>
+相对路径或者绝对路径  需要注意的是 参数的值不需要双引号 因为是默认的字符串
 
 
 
