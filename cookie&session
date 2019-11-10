@@ -1,0 +1,95 @@
+一:下载服务器中带有中文的文件
+request.getHeader("")  可以得到指定的请求头
+比如String clienttype= request.getHeader("User-Agent")
+这个可以得到发送请求的客户端的信息,若果是一个浏览器,可以包含该浏览器的信息
+if(clientTyoe.contains("Firefox")) 判断该浏览器是否是火狐
+(注意:  request是getHeader 而 response是setHeader)
+在中文文件名下载的时候由于最后设置content-disposition 中filename为指定的中文名
+比如setHeader("content-disposition","attachment;filename=黑马.txt")
+由于contentytpe只能规范响应内容的编码,而这里是响应了一个中文参数,所以浏览器那边和tomcat可能不对口
+所以要对这个文件名就行编码  URLEncoder.encode("黑马","UTF-8")将"黑马"按照butf-8格式转换成
+另外一种地址格式的字符串 这样浏览器能够识别并解码
+
+另外我们访问一个servlet,可以用相对路径也可以用绝对路径,这个路径名字和servlet的名字可能是不一样的
+在配置servlet的时候有一个servletname(给这个servlet取个名字) servlet-class指明这个servlet的类源码位置
+还有一个url-pattern 这个才是与名字相匹配的在地址栏上访问的东西  我们访问这个urlpattern 然后找到响应的servlet
+
+也就是 我们配置一个servlet 首先这个servlet的名字任意取的,其次这个servlet和它所参照的servlet实现类名字也可以不一致
+,还有就是这个servlet在地址栏上访问的url地址也可以servlet名字不一样
+
+类名是我写的实现类的名字 servlet名字是我们配置servlet随意取的 url-pattren是我们访问shevlet需要输入的地址 在配置时取得
+我们访问就是访问的这个rulpattren 所以 记住 访问servlet既不是访问的实现类名 也不是servlet的名字 而是他们对应的urlpattern
+
+假如我们访问一个login的servert,那么这个servlet的配置文件中 它对应的url-pattern一定是login
+比如 <a href="login"></a> 很明显会有一个servlet,它配置的urlpattern是login
+
+url-pattren是这个servlet对外发布时的访问路径,一一对应的. 我们访问servlet也是访问的这个url-pattern
+
+
+二:请求转发和重定向
+重定向早期写法:
+response.setStatus(302);
+response.setHeader("Location",URL);
+现在有一个简单的一部到位的重定向 =方法
+response.sendRedirict(URL);  一个一步的重定向方法
+
+或者还有一个复杂一点的方法
+请求转发:
+写法:
+request.getRequestDispatcher("想要调转的url").forward(request,response);
+RequestDispatcher  请求转发对象接收来自客户端的请求并将它们发送到服务器上的任何资源（比如 servlet、HTML 文件或 JSP 文件）的对象
+request.getRequestDispatche()里面的参数就是转发的目标位置  调用forward函数可以将这个对象中封装的请求 转发到目标位置
+
+
+区别:
+1.重定向后地址栏上显示的是我们访问的最后那个资源地址,而请求转发是访问的那个servlet路径地址(相当于在当前页面完成了内容的变更)
+2.请求至少有两次,比如第一次请求一个servlet 第二次是请求跳转的页面请求,而请求转发只有一次,当请求了servlet后 在服务器内部完成后续跳转的工作
+3重定向可以跳转任意路径,请求转发只能跳转本项目下的文件
+4重定向效率低一些,请求转发高一些
+
+比如请求对象request可以存值 setatt...  因为重定向相当于两次不同请求,所以,即使在第一个请求对象中存了值也不能在第二个请求中用
+但是请求转发就不一样了,因为不论多少次请求转发,都是同一个请求,所以,同一个请求的属性是公用的
+
+三:Cookie(小数据)
+是服务器给客户端,并且存储在客户端上的数据
+http请求是无记忆的,所以无论访问一个网站多少次,服务器都不知道
+有了cookie后,当客户端访问页面此时发送点东西给客户端,比如用户名和密码
+简单实用:
+设置cookie
+Cookie c =new Cookie(key,value)
+reponse.addcookie(c);
+获得cookie
+Cookie[] cooks = request.getCookies();
+for(Cookie c:cooks){
+}
+
+四cookie的实效
+默认情况下,关闭浏览器,cookie就没有了
+cookie.setMaxAge(); 设置这个请求某个cookid的有效期,秒为单位
+正值:表示在这个数字后,cookie才消失
+负值:关闭浏览器就失效,cookie的默认失效值为-1
+(注意:设置cookie的有效时间要在添加这个cookie之前设置)
+
+Cookie对象的常用api
+setValue();重新设置cookie的值
+但是这个设置有个问题,虽然讲cookie的值重新设置了,他是他设置的只是我们从浏览器得到的Cookie
+如果重新设置了而不用add方法响应到浏览器,那么下次我们去访问这个Cookie,他一直都是原始值
+所以用set方法改变了值之后要重新用addcookie返回给客户端
+(就好像 我们在登录qq时 记住了默认密码 当我们改变密码时 由于cookie没变 还是默认的 )
+
+setDomain(".baidu.com")
+用于指定只有请求了指定的域名,才会带上该cookie
+setPath("/cookdemo") 
+用于只有访问该域名下的比如cookdemo的这个路径才带cookie给客户端
+
+同一个请求可以响应多个cookie 所以我们在用request去得到http请求中的cookie时 得到的是一个数组
+
+
+保存时间的时候最好保存时间戳 这样利于下一次操作(currenttimemillis)
+
+
+
+
+
+
+
