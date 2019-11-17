@@ -88,6 +88,63 @@ setPath("/cookdemo")
 保存时间的时候最好保存时间戳 这样利于下一次操作(currenttimemillis)
 
 
+五:
+  get方式请求发送数据的时候在地址后面跟上? 然后是值对的形式 value不需要双引号 默认的字符串
+(java在一个类中使用同一个包下的其他类不需要导包,使用其他不同包下的类则需要导包,不管是不是同一个src文件
+只有在同一个包下的类才能在不导包的情况下互相使用,使用不在同一个包下的类除了导包也可以直接使用类的全路径名字使用这个类(包名+类名))
+导包其实导入的是一个类 import 包的全路径名称 所以不导包的话可以使用类的全路径名称
+注意:
+cookie的setPath()和setDomain()方法可以设置 当浏览器访问什么域名什么项目时才带回此cookie
+很明显当我们没有设置这两个的时候,某个servlet发给浏览器的cookie 默认下只有当浏览器访问这个servet的时候才带回这个cookie
+
+当我们将一个更新了值的cookie发送给浏览器时,虽然会代替了之前的那个cookie,但是他的属性是新cookie的 比如之前那个cookie 的时效是7天
+新代替的cookie虽然名字一样 但是 是不一样的cookie
+那么引出怎么清楚一个cookie:
+当一个cookie的时间为0时就删除了,所以我们可以设置cookie 的时间为0 然后在发给浏览器即可,发送过去然后立即就失效了
+1可以循环得到这个cookie然后设置
+2也可以直接new一个同名的cookie 然后设置为0发送过去
+
+六:session(会话) cookie的数量和大小有限制
+session是基于Cookie的一种会话机制,cookie是服务器返回一小份数据给客户端,并且存在客户端上,session是数据存放在服务器上
+getID() 得到会话id
+setattribute()设置属性
+get.. 得到属性
+remove...移除
+
+session何时创建何时销毁
+如果在servlet 中第一次调用了request.getsession() 就创建了会话,第二次调用会得到会话对象的当前值
+销毁时机:
+1关闭服务器
+2session会话时间,有效期过了,默认有效期:30分钟
+
+cookie是通过new来创建的,getcookie是得到已有的cookie
+而session是接口,他的创建通过getsession来创建
+注意:有时候key-value 不局限于value只是一个 也可以是一个数组或者集合
+invalidate()方法可以使会话无效
+
+使用步骤
+创建session HttpSessino session = request.getSession();  如果当前已有会话,则返回当前会话对象
+session.getAttribute(String key); 返回值是一个object对象 意思是value可以使任何类型
+比如购物车属性名为"car" 他的值应该是一个map<String,Integer>类型  比如 苹果 五个  梨子 3个 
+        
+        
+还有就是session是基于cookie的 因为会话的id被存储在cookie里面,当这个cookie 消失, 这个cookie 的名字是JSESSIONID
+由于cookie 默认path是web项目 所以同一个web项目下的页面共享cookie 所以所有servlet 中去得到会话时也是通过这个名为sessionid的cookie去创建
+如果已经有了这个jsessionid说明 已经创建会话,那么再用getsession去创建就会得到当前的会话,
+session有效期为30分钟,关闭浏览器后session不会销毁,因为他是存在于服务器中的,30分钟后才会销毁,但是为什么关闭浏览器后我们无法得到以前的session存的
+东西? 因为存放当前sessioid 的cookie在浏览器关闭后销毁了,id没了  就无法通过id 去找到这个会话
+
+那么怎么办呢?想要关闭浏览器后任然可以访问这个session 那么只有设置cookie的有效期
+首先得到session的id值
+String id = request.getSession().getId();
+Cookie cookie = new Cookie("JSESSIONID",id);//创建一个新cookie  名字一样值一样来代替默认的cookie 
+cookie.setMaxAge();设置有效期
+reponse.addcookie(); 添加到客户端    
+
+
+
+
+
 
 
 
