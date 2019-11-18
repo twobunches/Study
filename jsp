@@ -59,7 +59,16 @@ pageEncoding="utf-8"  jsp编译为servlet时的编码
  
  四jsp的内置对象
  常用九大内置对象:
+ pageContext request session application
+ 作用域对象 这些对象可以存值,它们的取值范围有限定 它们都有setAttribute() 和 gettribute()方法来存值
+ 它们的区别
+ pageContext
  
+ 
+ 
+ 
+ 
+ out exception page config response
  
  
  
