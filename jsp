@@ -58,6 +58,7 @@ pageEncoding="utf-8"  jsp编译为servlet时的编码
  
  
  四jsp的内置对象
+ 常用九大内置对象:
  
  
  
