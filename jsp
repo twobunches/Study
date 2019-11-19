@@ -63,12 +63,98 @@ pageEncoding="utf-8"  jsp编译为servlet时的编码
  作用域对象 这些对象可以存值,它们的取值范围有限定 它们都有setAttribute() 和 gettribute()方法来存值
  它们的区别
  pageContext
+ 作用域仅限于当前页面,跳转到另外一个页面后就不是同一个对象了
+ 
+ request
+ 同一请求下,属于同一对象,作用域限制于同一请求
+ 很明显在请求转发下,属于同一请求,而在重定向下是不同的两次请求
+ 
+ session 作用域限制于一次会话
+ 很明显在默认情况下创建了session后 有效期30分钟 由于依托于cookie的,当关闭浏览器后存取sessionid 的cookie消失了,之前那个cookie无法访问了
+ 所以关闭浏览器前的访问都属于都已session,当然也不是所有访问都是属于一个session,拥有相同sessionidCookie的http请求才属于同一会话,什么时候才拥有
+ 同一sessionid呢? 我们创建session时会创建这个cookie 而cookie默认的路径setpath(也就是客户端当在什么路径下才带回这个cookie)是servlet的前一级,
+ 其实也就是web项目目录.所以其实保存sessionid 的cookie默认是被同一项目下所有子路径文件所公用的,所以当我们访问一个项目中的各种文件时,在不关闭浏览器
+ 的情况下都属于同一会话
+ 
+ application对象  作用域限制于同一项目下 关闭服务器后就不能用了(这个对象明天继承了servletContext)
+ 从小到大应该是 pageContext request session application
+ 
+ exception page config
+ page其实就是jsp翻译成sevlet类后的一个实例对象
+ exception是一个错误对象  可以打印错误信息
+config可以获得这个翻译后的servlet类的一些配置信息
+ 
+ out  response
+ out对象 输出对象 向页面输出东西 jsp翻译成servlet后都是使用的这个out对象
+ reponse对象 也是向页面输出东西 
+ 但是不同点是out输出的东西是输出到reponse的缓冲区中
+ 所以假如在一个jsp页面上同时有out和reponse语句
+ 那么最终呈现出来的很明显response输出的东西在前面,因为out放在了response的缓冲区中
+ 
+ 
+ 
+ 五jsp EL表达式
+ 可以使用EL表达式取出作用域对象中存的值(会输出在页面上)  作用域对象通过setAttribute存属性值
+ ${ pageScope.name}比如这个会输出name属性的值在页面上
+ ${ pageScope.name}  这里的name是存在每个对象里面的属性的名字 也就是属性名
+ ${ requestScope.name}
+  ${ sessionScope.name}
+  ${ applicationScope.name}
+ 
+
+ 如果是数组的话 怎么用EL表达式取出存在作用域对象里面的
+ 比如 
+ <%
+ String[] a=new String[]{"aa","bb","cc","dd"};
+ pageContext.setAttribute("array",a);
+ %>
+ ${ array[0]} , ${ array[0]}, ${ array[0]}, ${ array[0]}  在页面上的效果就是aa,bb,cc,dd
+ 
+ 如果存的是图的话,直接用属性名.key 就可以得到相应的value
+ 比如
+ ${ map.name  }, ${map.age}
+ 
+ 注意:没有指定作用域然后直接取某个属性值的话,是从小到大去取的
+ 
+ 若是在jsp的作用域对象里面存入一个对象,并且这个对象里面有私有的成员变量的时候
+  比如一个user对象 User user =new User("张三","13");  两个成员变量 一个name 一个age
+  将这个对象存入属性中
+  
+  <%  pageContext.setAttribute("U",user); %>
+  怎么访问这个属性存的值?
+  ${ pageScope.u.name} 
+  ${ pageScope.u.age}  EL表达式和java不一样  这里直接通过.的方式将属性的值(一个对象)里面的成员给引用了
+也就是EL表达式可以通过.的方式得到属性值对象里面的成员 
+ 
+ EL还有一些其他的作用
+ ${ empty 对象 } 判断一个对象是否为空
+ ${ } 在这里面可以进行+-*/的运算然后输出 也可以进行逻辑操作
  
  
  
  
  
- out exception page config response
+ 
+ 
+ 
+ 
+七jsp细节
+ 在jsp页面里面<%%>可以写java代码 很明显可以使用java的类 也可以使用自定义的类 只要在jsp页面里面导包就行
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
  
  
  
