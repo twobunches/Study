@@ -129,21 +129,68 @@ config可以获得这个翻译后的servlet类的一些配置信息
  EL还有一些其他的作用
  ${ empty 对象 } 判断一个对象是否为空
  ${ } 在这里面可以进行+-*/的运算然后输出 也可以进行逻辑操作
+ El的11个内置对象
+ 1pageScope
+ 2requestScope
+ 3sessionScope
+ 4applicationScope
+ 这四个EL内置对象用以在EL表达式内获得jsp内置对象设置的属性值
+ 
+ 5param(存参数的一个主要值)  比如${param.name}
+ 6paramvalues (是以String数组的形式储存参数的值) 这两个用来获得页面的参数(http请求带来的参数)  比如${paramValues.name[...]}
+ 
+ 7header
+ 8herderValues 用来获得http请求头的内容
+ 
+ 9pagecontext
+ 10cookie
+ 11Initparam
+ 
+ EL主要是用来做取值操作并输出到jsp页面
+ 
+ 七JSTL  jsp标准标签库
+ 使用jstl
+ 1导入支持jstl的jar包到 wencont.里面的lib中
+ 2在jsp页面中用taglib指令 prefix ="c"标签库别名(默认为c)  uri 路径 快捷生成alt+/ 选择1.1
  
  
+ 常用标签
+ <c:set var="name" value="zhangsan" scope=""></c:set>  相当于String name ="zhangsan",但是这个变量是存到了域当中去了(默认是pagecontext中)
+ <c:if test="这里是一个逻辑表达式">  逻辑表达式是用EL来写的 ${ age>16 } 1.1支持EL 
+    这里是会执行的语句(在test的值为true的情况下)
+ </c:if>
  
  
+ <c:foreach begin="" end="" var="" step="指定一个数字,跨越几步打印一次,增幅的意思,不是一步一步走了"></c:foreach> 在jstl里面遍历
+ <c:foreach var="stu" items="要循环的数组或集合(就是某个存在作用域的属性)"></c;foreach>  用来遍历值为数组或者集合的属性 集合的每一项
+ 的值赋值给stu 然后可以使用stu取值 items=里面的值要用EL来取
+ <c:foreach var="stu" items="list"> 循环往页面输出一行行的数据
+ <tr>
+ <td>${stu.name}</td>
+ <td>${atu.age}</td>
  
+ </c:foreach>
+ 
+ 注意在作用域对象中存的属性 要通过EL表达式取值 ${list}
+ 
+ 因为有jstl 所以就简化了jsp里面java的书写 可以不用<%%>来写一大堆java,因为可以通过EL直接取值 可以用jstl来判断和循环
+ 
+ 在jstl的if和foreach标签里面可以直接写html代码或者EL表达式
  
  
  
  
 七jsp细节
  在jsp页面里面<%%>可以写java代码 很明显可以使用java的类 也可以使用自定义的类 只要在jsp页面里面导包就行
+ 在一个web项目里面,不能用正确的方式比如(filestream)读到java resourse里面的文件,因为最后这个src被整合到了web项目里面
+ 但是如果不在servlet,也就是不继承httpservlet的话也不能用servletcontext的方法,因此只有用类加载器,然后将文件放在src里面
+ 向页面输出东西方式
+ 1:不在<%%>里面 直接在外面写html标签
+ 2:在<%%>用out 和response
+ 3:在jstl的标签里面可以写html代码和E表达式 
+ 4使用EL取值输出
  
- 
- 
- 
+ 所以EL+JSTL可以极大的省略jsp中java代码的书写
  
  
  
