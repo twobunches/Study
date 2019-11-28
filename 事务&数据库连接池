@@ -1,1 +1,291 @@
+一:事务(transaction)
+1:其实就人为规定的一组数据库操作序列,要么全部执行,要么全部不执行,它是一个整体的序列.(银行转账 )
+这个特性其实就是为了确保这个操作一定会操作成功,假如中间有一步没成功则全部失败,然后重新来.
+mysql在命令行窗口是自动提交事务的  show variables like "%commit%",查看提交的设置
+set autocommmit =off;可以关闭自动提交事务功能 这只能关闭命令行窗口的自动提交..
+
+start transaction;
+语句体;
+commit; 或者rollback;  提交事务或者回滚
+只有在事务提交后才能改变数据库里面的值
+
+从 start 到commit 代表了一个事务的结束
+在显示提交中:只有被commit 之后才会将数据更改同步到磁盘上的数据库,我们在没commit之前 查询到的更改类似于从一开始做了一个备份(相当于更改了内存中的数据)
+我们对备份(内存数据)的更改只有在commit 之后才会同步到磁盘上的数据库.所有的DML 语句，执行完之后，处理的数据，都会放在回滚段中（除了 SELECT 语句），
+等待用户进行提交（COMMIT）或者回滚（ROLLBACK），当用户执行 COMMIT / ROLLBACK后，放在回滚段中的数据就会被删除,然后同步或者回到初始状态
+回滚可以说是回滚的内存中的数据!!!!!!!!
+
+二在java代码里面使用事务
+1jdbc默认的事务提交方式是自动提交的
+2connection对象的setautocommit()方法可以设置自动或手动提交,使用事务的话需要先设置关闭自动提交
+commit() 可以提交事务 rollback()方法可以回滚事务
+3很明显在catch里面使用rollback 出现异常后就回滚 没出现异常则提交事务即可
+4事务是针对连接的,不同的连接对象(Connection),不能说有一个连接了数据库然后关闭了自动提交功能,那么所有人都关闭了,这是错的,
+事务针对连接,也就是不同的人它们连接到数据库后是独立的,是否使用事务取决于个人
+
+
+三事务的特性  ACID
+1原子性 事务要么全部执行,要么全部不执行
+2一致性 事务执行前后,保证数据的完整性
+3隔离性 事务之前应该是互不干扰的
+4持久性 事务一旦提交,那么对数据的影响是持久的,保存到磁盘上
+
+并发操作带来的问题:
+1读脏数据  一个事务读到了其他事务未提交的数据
+2不可重复读 一个事务读到了其他事物提交的数据,导致前后读到数据不一致,受到了另一个事务的影响
+3丢失更新   指的是有效更新会丢失
+解决丢失更新的两个方法:
+1悲观锁 认为一定会丢失更新,那么在更新之前先加锁. for update 
+2乐观锁  认为不会发生丢失更新,但是需要程序员自己控制,可以在差的数据里面加一个字段(属性)
+         当第一个事务更新了之后,由于第一个事务查询的字段和服务器里面的字段相同,那么久同意修改
+         而第二个事务由于读取的字段是更改之前的,和当前不匹配,那么不允许修改
+
+
+
+4幻读  幻读是解决了不可重复读之后产生的问题,事务1读到的数据始终是一样的,但是如果事务二提交了更改,那么在可重复读的隔离下 将得不到真正的数据
+       这种可重复读不是我们所追求的,我们追求重复读的都是真实的数据,幻读读的同样的数据是不真实的
+
+
+
+事务隔离级别(可以设置一个事务对其事务的隔离级别) 
+1read uncommitted 读未提交 导致读脏数据  当前事务可以读取其他事务未提交的数据
+2read commited 读已提交   导致不可重复读 当前事务只能读取其他事务已经提交的数据
+3repeatable read  可重复度 在一个事务中(没结束前)读到的同数据一定是一样的  导致幻读
+4serializable 可串行化  最高级别 就是指事务串行排队的意思 让事务排队
+这种隔离级别下,先开的事务对数据有优先处理权,后开的事务无法处理这个数据,这解决了数据安全隐患,但是性能降低了,也就是排队的意思
+如果有一个事务设置了可串行化,那么谁先打开事务并且处理某个数据,
+
+
+
+
+在mysql中默认第三个级别 oracal默认读已提交 可以通过set session transaction isolation level .... 设置隔离级别
+ session 表示仅针对当前连接(或者就是当前会话的意思) 这个session 改成global的话就是mysql 全部连接的级别都为....
+如果重新开一个窗口,也就是重新建立一个连接,由会变回来,和java里面连接数据库是创建的connection很像,连接彼此之间是独立的
+
+四数据库连接池(自定义数据库连接池)
+数据库的创建连接对象比较消耗性能
+一开始在内存里面开辟一个空间,一开始往池子里面放置多个连接对象,后面需要连接的话,从池子里面拿.
+
+驱动器类型:  com.mysql.jdbc.Driver 这个是mysql的
+             com.oracal.jdbc.Driver  这个是oracal的
+      所谓类型其实就是mysql 或者 oracal所提供的的jar里面的Driver类的全路径名字
+      之所以不是java里面的Driver是因为java里面的那个Driver是暴露给数据库的,让他们重写的接口
+      导入的jar中 真正要用的也就是这个驱动类 全路径名称忘记了 可以在导包后打出Driver然后复制即可
+      
+      一般来说我们需要的Driver url pass user 通过配置一个属性文件 properties获得
+      将从配置文件中获取值的代码放置在静态代码块中
+      
+
+
+
+如何创建:
+1java里面有一个DataSource接口 接口里面有一个getConnection方法 用这个方可以获得连接池中的连接
+首先需要重写Datasource接口 
+2既然要从连接池中拿东西,那么得在重写的类中 去创建指定数目的连接
+
+可以在 这个重写类的静态代码块中创建 也可以在这个类的构造方法里面创建连接 并且把连接放在一个集合里面
+然后可以创建对象并用get方法获取连接,  在get方法里面用remove移除获取的连接,然后在建一个方法归还连接,也就是往list里面add
+
+因为list是没有长度限制的,所以可以随意增加删除
+
+
+public class myDataSource implement DataSource{
+
+List<Connection> list = new ArrayList<Connection>();
+
+   public myDataSource(){
+      这里面创建连接
+      for(){
+      使用自己创建的工具类
+      
+      }
+     List.add();
+   }
+
+
+   public get...(){
+   
+  return list.remove();
+   }
+    public back(connection conn){
+      list.add(conn);
+     
+    }
+    
+    但是这个有个问题会在重写类中多加了一个归还方法,那么就不能体现面向接口编程 因为多了接口中没有的方法
+    
+    那么就只有将这个归还功能放在Connection连接对象的close方法里面
+    但是由于connection接口的具体实现类不知道是谁,不能使用继承重写close
+    因为connection接口被一个不知名的类实现了,并且我们创建连接的时候使用的这个不知名类创建的对象并且赋给connection接口
+    所以conn.close()会调用这个不指明类的close方法
+    
+    就算我们在写一个类m实现Connection,但是很明显 我们通过Drivermanage.getconnection()得到的对象(这个方法里面的源代码肯定有实现Connection的那么类)
+    ,它不是m类的对象
+    
+    比如:当接口被多个类实现的时候,这些类方法都一样.但是内容不一样
+    当我们用类1创建Connection对象,我们调用Connection对象的方法,会根据动态代理寻到子类的方法
+    
+    那么到底是寻找的哪一个子类? 很明显是子类(类1)的方法,创建Connection对象用的什么子类 就去找这个子类
+    要不然就乱套了.
+    
+    所以我们要修改Connection的colse方法  ,其实是要去找到实现conn的那个类a,去继承那个类,在重写colse()方法
+    这里的话因为我们通过a创建对象,那么在调用方法的时候由于a的子类重写了方法 就会去调用子类的方法
+    
+   比如conn c1 =new 类1(); 用类1创建的对象调用conn里面的方法(动态代理)会找类1的方法
+       conn c2= new 类2();   用类2创建的对象调用conn里面的方法(动态代理)会找类2的方法
+       
+       实现同一接口或继承同一父类的 子类之间没有一毛钱关系
+       
+    继承行不通
+    
+   1使用装饰者模式 用来扩展一个方法
+   假如有一个接口 然后类a实现了它 但是类a需要某个新功能需要新写一个方法,而写了之后就不能实现面向接口编程
+   因为父类接口无法调用子类方法
+   怎么办呢 这个时候需要在写一个类b来实现接口,但是由于类a的对象只能调用类a的放法
+   
+   装饰者模式的思想(假装在不知道a具体名字的情况下,因为知道了只需要重写即可...)
+   用这个类b来扩展类a的功能,将a的对象丢进b中,然后在调用b的同样方法即可
+   
+   所以我们返回conn对象的时候返回 conn对象的装饰者对象C
+   在c中调用close来完成我们需要的代码,然后如实在页面其他地方要使用conn的一些方法
+   我们只需要在c中使用传到c中的conn对象,调用相应方法
+   
+   比如 connwrap.preparedstatement();
+   
+   在connwrap类的重写方法中
+   prepare...(){
+   return  conn.pre...;这样既可
+   }
+ 
+    
+  五 已有的数据库连接池
+  
+  1DBCP
+  使用DBCP首先需要导入支持DBCP的jar包
+  然后创建数据库连接池对象
+  
+ BasicDataSource bds =new B....();
+然后
+在不适用配置文件的情况下
+需要使用
+setDriverClassName()设置驱动名字
+seturl 设置数据库url
+setusername()
+setpassword()
+然后才能使用数据库连接池对象 的getConnection方法来获取连接到指定数据库的对象
+
+使用配置文件(有点复杂,直接网上下载即可)放在src目录下
+使用 BasicDataSourceFactory factory=new BasicDatasourceFactory();
+  使用连接池工厂对象
+  factory.createDataSource(properties p); 这个方法根据一个属性配置对象返回一个连接池对象
+  这个p 很明显通过
+  properties p =new properties();
+  但是新创建的属性配置对象没东西 得加载
+  p.load(url/文件/输入流);
+  InputStream is =new FileInputStream(""); 如果把配置文件放在项目根目录下则使用此方法,或者用多级("./..../..")只要知道这个方法默认路径是项目根目录
+  如果用类加载器的话 把配置文件放在src下即可
+  
+  BasicDataSourceFactory factory=new BasicDatasourceFactory();
+  properties p =new properties();
+  InputStream is =new FileInputStream(""); 
+  p.load(url/文件/输入流);
+  factory.createDataSource(properties p); 
+   
+   
+  2C3P0
+    1不使用配置文件
+    基本方法和DBCP一样 只不过c3p0里面的连接池对象是 ComboPooledDataSource()
+     setdriver...
+     set...
+     
+     
+     
+    2使用配置文件  支持xml 和properties两种格式
+    xml文件名字只能是c3p0-config.xml  基本格式如下
+  <c3p0-config> 在里面添加四个property 标签  属性分别为 jbdcclass jdbcurl user password
+  <default-config>
+    <property name="automaticTestTable">con_test</property>
+    <property name="checkoutTimeout">30000</property>
+    <property name="idleConnectionTestPeriod">30</property>
+    <property name="initialPoolSize">10</property>
+    <property name="maxIdleTime">30</property>
+    <property name="maxPoolSize">100</property>
+    <property name="minPoolSize">10</property>
+    <property name="maxStatements">200</property>
+    
+    //这里添加
+     <property name="jbdcclass">com.mysql.jdbc.Driver</property>
+    <property name="jdbcurl">jdbc:mysql://localhost/...</property>
+    <property name="user">root</property>
+    <property name="password">root</property>
+  </default-config>
+  
+   //上面是默认的连接  下面这个可以指定连接池对象的参数名字 然后使用下面的连接
+  <named-config name="Oracle"> 
+    <property name="acquireIncrement">50</property>
+    <property name="initialPoolSize">100</property>
+    <property name="minPoolSize">50</property>
+    <property name="maxPoolSize">1000</property>
+
+    <!-- intergalactoApp adopts a different approach to configuring statement caching -->
+    <property name="maxStatements">0</property> 
+    <property name="maxStatementsPerConnection">5</property>
+
+    <!-- he's important, but there's only one of him -->
+    <user-overrides user="master-of-the-universe"> 
+      <property name="acquireIncrement">1</property>
+      <property name="initialPoolSize">1</property>
+      <property name="minPoolSize">1</property>
+      <property name="maxPoolSize">5</property>
+      <property name="maxStatementsPerConnection">50</property>
+    </user-overrides>
+  </named-config>
+
+</c3p0-config>
+  c3p0的xml支持配置两种不同的数据库,在ComboPooledDataSource()如实不指定参数则使用 <default-config>这个标签的连接
+  如果给了指定参数 ,那么使用<named-config name="Oracle"> 这个标签的连接 参数就是这个标签的name值
+
+	
+    c3p0使用配置文件创建连接池不需要像DBCP那样要去加载属性文件,只需要把xml文件放在src下即可,但是名字一定得对,
+    想一下为什么可以呢?
+    大概因为c3p0的连接池对象在创建的时候 执行静态代码块,在这个代码块里面用类加载器去加载固定名字的xml文件,而DBCP的连接池对象
+     
+
+  
+
+
+
+
+六:DBUtils
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
