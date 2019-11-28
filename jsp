@@ -146,6 +146,10 @@ config可以获得这个翻译后的servlet类的一些配置信息
  10cookie
  11Initparam
  
+ EL里面的11个内置对象是已经实例化的类,里面存储着有关页面的各种信息,这11个对象都是类似于map类的对象,可以通过.运算符直接取值
+比如${cookie.history} 这里取出名为history的cookie的值
+
+
  EL主要是用来做取值操作并输出到jsp页面
  
  七JSTL  jsp标准标签库
