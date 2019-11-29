@@ -161,7 +161,7 @@ List<Connection> list = new ArrayList<Connection>();
   五 已有的数据库连接池
   
   1DBCP
-  使用DBCP首先需要导入支持DBCP的jar包
+  使用DBCP首先需要导入支持DBCP的jar包 一个dbcpjar包 一个pooljar包
   然后创建数据库连接池对象
   
  BasicDataSource bds =new B....();
@@ -192,7 +192,7 @@ setpassword()
   factory.createDataSource(properties p); 
    
    
-  2C3P0
+  2C3P0  使用c3p0连接池也需要它依赖的jar包
     1不使用配置文件
     基本方法和DBCP一样 只不过c3p0里面的连接池对象是 ComboPooledDataSource()
      setdriver...
@@ -214,11 +214,14 @@ setpassword()
     <property name="maxStatements">200</property>
     
     //这里添加
-     <property name="jbdcclass">com.mysql.jdbc.Driver</property>
-    <property name="jdbcurl">jdbc:mysql://localhost/...</property>
+     <property name="driverClass">com.mysql.jdbc.Driver</property>
+    <property name="jdbcUrl">jdbc:mysql://localhost/...</property>
     <property name="user">root</property>
     <property name="password">root</property>
   </default-config>
+  
+  
+  
   
    //上面是默认的连接  下面这个可以指定连接池对象的参数名字 然后使用下面的连接
   <named-config name="Oracle"> 
@@ -248,31 +251,129 @@ setpassword()
 	
     c3p0使用配置文件创建连接池不需要像DBCP那样要去加载属性文件,只需要把xml文件放在src下即可,但是名字一定得对,
     想一下为什么可以呢?
-    大概因为c3p0的连接池对象在创建的时候 执行静态代码块,在这个代码块里面用类加载器去加载固定名字的xml文件,而DBCP的连接池对象
+    大概因为c3p0的连接池对象在创建的时候 执行静态代码块,在这个代码块里面用类加载器去加载固定名字的xml文件,所以名字一定得对;
+    
+    
+    
      
-
-  
-
-
 
 
 六:DBUtils
+别人写好的关于数据库的通用CRUD操作,不需要我们去写那些比如藏剑statement对象的操作;
+使用方法:
+1:添加依赖的jar包
+关键对象 以及方法
+1QueryRunner对象
+QueryRunner qr = new QueryRunner(DataSource ds);  构造这个查询对象需要一个连接池对象 DBCP c3p0 或者 自定义连接池都可以
+
+两个关键方法
+增加删除修改 用update
+qr.upadta();
+第一个参数为sql语句,如果需要的话可以向ps对象那样添加在sql添加问号,然后update可以增加参数给?赋值
+比如
+updata(insert into student values (null,?,?)",1,1) 有几个问号就可以多几个参数 给问号赋值
+
+查询有query
+qr.query(sql,rsh,param);
+第一个参数就sql语句,如果有?的话,就增加参数给?赋值
+
+query的要复杂些,具体形式如下
+ComboPooledDataSource dataSource = new ComboPooledDataSource(); 
+		QueryRunner queryRunner = new QueryRunner(dataSource);
+		Student student = queryRunner.query("select * from student where sid = ?",new ResultSetHandler<Student>(){
+			@Override
+			public Student handle(ResultSet rs) throws SQLException {
+				Student student = new Student();
+				while(rs.next()){
+					String sid = rs.getString("sid");
+					String sname = rs.getString("sname");
+					int age =rs.getInt("age");
+					String sidcard = rs.getString("sidcard");
+					student.setSid(sid);
+					student.setSname(sname);
+					student.setAge(age);
+					student.setSidcard(sidcard);
+				}
+				return student;
+			}
+		},"01");
+		System.out.println(student.toString());
+	}
+	
+这个是当返回值是一个集合的匿名实现类书写方法
+		List<Student> list = queryRunner.query("select * from student", new ResultSetHandler<List<Student>>(){
+
+			@Override
+			public List<Student> handle(ResultSet rs) throws SQLException {
+				List<Student> list =new ArrayList<Student>();
+				while(rs.next()){
+					Student student = new Student();
+					String sid = rs.getString("sid");
+					String sname = rs.getString("sname");
+					int age =rs.getInt("age");
+					String sidcard = rs.getString("sidcard");
+					student.setSid(sid);
+					student.setSname(sname);
+					student.setAge(age);
+					student.setSidcard(sidcard);
+					list.add(student);
+				}
+				return list;
+			}
+			
+		});
+		for (Student student : list) {
+			System.out.println(student.toString());
+		}
+	
+这个rsh参数是一个接口的实现类参数,这个接口是 ResultSetHandler<T> 
+我们需要在这里写一个该接口的匿名实现类
+接口的匿名实现类的写法,因为同时要实例化,所以和new对象类型 但是又要一对{}来写实现
+这个类需要重写一个方法,handle方法,
+我们需要在这个方法类写一个功能
+把查询得到的结果集 resuleset 遍历然后返回到我们声明的类或者集合里面去
+所以这个在声明匿名实现类的时候需要写上泛型,用什么数据结构来存储得到的结果
+在将resultset的内容复制到这个容器的 工作又我们完成,在handle内部
+new ResultSetHandler<T>(){
+	
+
+}
+
+当然也可以不用这种匿名实现类的方法
+我们可以去使用已有的ResultSetHandler的实现类
+
+1如果我们得到的结果只有一个对象 那么使用BeanHandler<T>(T.class)类
+2如果我们得到的结果是一个集合,使用BeanListHandler<T>(T.class)类
+
+这里的T就是一个我们写的一个类 可以用来装一行数据的类 第二种方式最后返回的是一个list<T>集合,这两个类在new的时候需要给构造函数一个参数
+参数就是类型T的class类
 
 
+具体的实现不需要我们去写,但是容器我们还是需要自己准备
 
+总结
+1使用DButil查询得到的结果不再是以result返回,这个结果需要我们自己定义一个和该表对应的类来接受
+   如果查询的结果是单行,那么在query()的第二个参数 应该使用beanhandle 的实例 
+   new Beanhandle<自定义类>(.class)  
+    如果是多行
+    则需要使用Beanlisthandler类
+    new Beanlisthandle<自定义类名>(.class)  
+    它们的构造函数都需要一个参数,自定义类的class对象
+   但是要注意我们对照表构造的类 里面的成员变量的名字一定要和表对应起来,不说完全一样,至少关键字要一样
+   比如在表里面 的sid  那么类里面至少有id这两个单词
 
-
-
-
-
-
-
-
-
-
-
-
-
+2不使用既有的实现类,自己写一个resultsetHandler的实现类的话
+ 如果单一对象则泛型T是一个类 多行的话泛型T是一个集合List<...>
+  基本方法如下  new resultsetHandler<T>(){
+  
+   public T handleer(Resultset rs){
+   
+   return null;
+   }
+  }
+  
+  当执行query函数的后,会去执行这个实现类的handler方法,并且带入结果集Resultset
+  handle函数返回的值就是最后query返回的值,所以需要我们在handler里面手动得把Resultset的存的数据 放到我们定义的类中或集合中然后返回
 
 
 
