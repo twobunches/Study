@@ -38,7 +38,9 @@ md.metadataCount();//得到参数的个数,也就是sql中?的个数
 <T>  泛型可以放在类的申明中,也可以放在方法的申明中
 
 三:MVC设计模式
-
+M  model 模型层 javabean 封装数据
+v视图层 展示给用户的
+c controller serclet 处理请求跳转
 
 
 
