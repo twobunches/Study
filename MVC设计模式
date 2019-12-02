@@ -1,0 +1,65 @@
+一:可变参数 object ...args   三个点代表可变的参数,即数量不固定
+当函数的参数数量不固定的时候,可以用这种可变参数
+怎么在函数里引用这种可变参数?
+可变参数可以看成是数组,在函数内部可以用数组依次调用参数列表从左往右的的参数
+
+当可变参数的类型也不固定时,可以使用object作为类型
+比如有一个函数定义  void Plus(object ...args,int a,int b){
+    
+
+}
+这里的object ...args可以传入不限制数量的参数,然后在内部用数组引用
+
+比如 args[0]代表可变参数列表传入的第一个参数  args[1]...以此类推
+很明显 用一个循环可以遍历
+for(int i=0;i<args.length;i++){
+
+  args[i]...
+
+}
+
+调用函数时 比如 Plus("abc",123,'a',1,2)   前面三个都是可变参数,后面两个是固定的参数
+在DBUtil的 queryRunner类的query方法内部就是用了可变参数,因为每次插叙你的sql语句的?数量不固定,类型也不固定
+ps对象的setObject方法可以在类型不确定的情况下给?设置值
+
+二 mete data 元数据
+描述数据的数据
+
+三种类型
+数据库元数据 databasemetadata
+参数元数据  parameterdata类 用以描述参数的元数据
+比如preparestatement对象以一个带问号sql语句构造对象,可以使用getparametermetadata来得到这个对象参数的信息
+metadata md = ps.getParametermetadata() //得到ps对象的参数元数据对象
+md.metadataCount();//得到参数的个数,也就是sql中?的个数 
+结果集元数据  resuktset metadata 
+
+
+接口的匿名实现类写法  new 接口名(){  }
+<T>  泛型可以放在类的申明中,也可以放在方法的申明中
+
+三:MVC设计模式
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
