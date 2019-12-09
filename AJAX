@@ -10,3 +10,40 @@ ajax并不是一种新的技术,他只是把原有的技术整合到了一起,AJ
  并且由于不跳转页面,使用write函数返回的数据是返回给ajax的
  
  三 ajax的核心对象 xmlhttprequest
+ open("get/post","url",true/false)  url可以写全路径也可以相对路径  相对路径的参照路径是本jsp或者html所在位置
+ 在tomcat中一般html文件是放在项目的目录下,因此相对路径一般是项目根目录
+ 
+ 重要事件  onredaystateschange   这个事件在redaystate属性改变时就会触发事件
+ 
+ redaystate 有0 1 2 3 4五个值对应四次变化 因此事件onredaystateschange 会触发四次
+ 其中4代表请求完成 且响应就绪 
+ 还有个status属性  200代表ok 404代表未找到页面   当redayState=4和status=200代表响应已经就绪
+ 实例
+xmlhttp.onreadystatechange=function()
+{
+    if (xmlhttp.readyState==4 && xmlhttp.status==200)
+    {
+        document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+    }
+}
+
+这是一个标准的处理响应的代码 写在send之前
+
+四ajax的post请求  比get复杂一点
+
+
+xmlhttprequest.send("post","",true)
+xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");  加一个content-type头,表示提交的数据是一个经过url编码的表单数据
+....send("发送的参数");  参数写在send一面
+
+
+
+五ajax的 
+当返回的值是文本的时候,使用responseText属性来引用
+responseText属性用来获得字符串形式的响应数据。
+responseXML属性用来获得XML形式的数据 得到的值是一个xmldoc对象 是一个document对象
+
+
+
+
+
