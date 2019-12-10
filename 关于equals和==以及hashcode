@@ -1,0 +1,64 @@
+对于八种普通类型来说
+int short long char float double byte boolean ==比较的是值
+对于引用类型来说==比较的是地址
+
+equals()方法在没有重写的情况下,只有object类下的equals,那么这个方法和==是一样的,判断对象的地址
+对于String类,重写了equals后判断的是值而不是地址  ,对于Integer封装类来说判断的是值以及类型是否相同(不是判断地址)
+举例:
+Integer a =1;
+Integer b=1;
+a.equals(b); true  因为封装类重写了方法 判断值是否相同
+但是a==b false  因为 a和b的地址是不同的(==判断的是地址)
+当然对于String来说==和equals的结果没有差别,string的值相同,地址也必然相同
+
+Double c=1.0;
+a.equals(c); flase 虽然值相同,但是类型不同 a==c是绝对错的 因为地址不同的
+
+需要注意一点:除了String类是储存在常量池,其他任何类不管是封装类还好还是其他类,只要new了 那么每一个对象的地址都是不同的
+不同类的地址绝对不同,同一个类的不同对象地址也不同!!!!!!!
+Integer a =1;
+Integer b=1;    a和b虽然值相同,但是他们在堆内存中是属于不同地址的,这一点和String差别很大
+
+
+hashcode()方法是根据特定的散列函数计算的对象的hash值,可以对应唯一物理地址
+
+对象相同的,hashcode必然相同
+对象不同的不能说明hashcode一定不同
+hashcode不同则对象一定不同
+
+由于set是无序的且不重复的,它是怎么保证不重复的呢?
+在我们使用add的时候 如果重复添加一个对象 add会返回false
+但是 add的源码中判断对象是否相同的流程有缺陷
+ if (e.hash == hash && ((k = e.key) == key || key.equals(k))), 成立则返回已经存在的值
+判断hash值是否相同,如果不同则不存在重复的,因为hash不同则对象一定不同
+如果有hash相同 则下一步判断对象是否相同  这里用了==和equals 先用==是为了提高效率 直接判断地址
+但是有时候我们希望 当一个类的不同对象 它们的成员变量值相同时也视为重复,可按照add的源码,不同对象的地址
+必然是不同的,所以我们可以重写equals,判断成员变量是否相同
+set集合下泛型的hashcode重写方法 可以返回泛型成员变量的hash值
+
+比如student类
+student{
+string id=,,,
+string name=,,,
+
+
+
+
+
+
+public hashcode(){
+    return id.hashcode+name.hashcode()
+
+}
+equals(){
+判断成员变量是否相同
+}
+
+}
+String 和基本变量的封装类都重写了hashcode ,这些类的对象如果值相同,hashcode则则是相同的
+所以假如成员变量值相同,则明显我们重写的hashcode也是相同的
+
+
+
+
+
