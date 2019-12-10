@@ -75,7 +75,213 @@ xmlhttp.onreadystatechange=function()
 
 六jquery(jsapi集合)
 1.jquery中的ajax写法
-load()方法,从服务器加载数据,并把返回的数据放入被选元素中
+load()方法,从服务器加载数据,并把返回的数据放入被选元素中  
+注意点:load方法返回的值是以text()的方式写入被选元素的, 比如底层实现就是 $(js).text(response)  
+所以我们给表单字段赋值的话就不管用,表单字段赋值需要使用val()方法或者js的value赋值
+text()或者html()对表单字段不管用
+
+$(selector).load(URL,data,callback);
+
+必需的 URL 参数规定您希望加载的 URL。
+
+可选的 data 参数规定与请求一同发送的查询字符串键/值对集合。
+
+可选的 callback 参数是 load() 方法完成后所执行的函数名称。
+
+url中可以添加jquery的选择器,可以选择从文件中选取指定元素
+
+可选的 callback 参数规定当 load() 方法完成后所要允许的回调函数。回调函数可以设置不同的参数：
+
+responseTxt - 包含调用成功时的结果内容
+statusTXT - 包含调用的状态
+xhr - 包含 XMLHttpRequest 对象      我们在写回调函数时要加上这三个参数,当然名字可以不一样但是,要知道相应位置代表的什么参数
+function(responseTxt,statusTXT,xhr){
+}
+
+
+注意区分jquery中的jq对象和js对象 ,jq对象通过get方法得到js对象,js对象通过$(js)转化为jq 对象,jq对象和js对象它们的方法和属性不能混用
+
+
+2get()方法
+$.get()
+$.get(url, [data], [callback], [type])
+data是发送给服务器的数据参数 
+格式:{ name:"Donald", town:"Ducktown" }  写法类似js对象的形式
+url是文件或者servlet的地址 
+function(data,status,xhr) 回调函数 带的参数 data是服务器返回给ajax的数据 xhr是对象 status包含ajax状态 可以只有data返回值一个参数
+type是设置返回数据的类型
+有text html xml json ....
+
+$.get()就是ajax中简化的get方式获得数据
+get方式带数据可以用url后面带?带过去
+
+
+3$.post()方法
+语法格式同上 没什么不同
+
+我们用DBUTIL的时候,使用bean或beanlist来接受结果时,需要创建javabean,哪怕这个表只用一两个属性,也要为它们创建javabean
+另外要注意的是,bean或beanlist的泛型t是我们手写的 ,不能传递String类....javabean中的成员变量名字要和表属性的名字一一对应起来
+javabean中的成员变量个数可以随便,因为是从表的属性中找值和bean匹配,只要匹配的那几个名字要一样就行了
+
+DButile中的模糊查询    where ...like ?    这里的问号需要一个字符串 一个按照规定写的匹配字符串 
+假如包含a的匹配串   "%a%" 在sql中会变成'%a%'  不需要写成"'%a%'"这种  因为在sql语句中需要一个字符串  ,"%a%" 代表了字符串,
+赋值给sql的?时,就会变成'%a%', 
+
+
+3ajax请求中 请求转发和重定向的作用
+
+原来如果是由浏览器发出的请求的话,那么请求转发会将响应的页面返回给这个浏览器
+ajax的请求,那么请求转发之后跳转的页面内容会响应给ajax ajax可以接受这个页面的全部内容
+也就是说ajax发送请求到servlet,然后使用请求转发到另一个页面的话,当前页面不会发生跳转,但是会将请求转发后的页面内容(html)响应给ajax
+在请求转发的那个页面,head和bod标签都可以不要,只需要写你需要的标签即可 ,因为严格来说一个html页面body和head标签不是必须的,只要标签是对的就行
+返回的html是纯文本形式的,所以不必要的head和body就不要
+
+如果是用ajax查数据库的话,返回的值是一个集合,此时应该返回xml,可以将list转化成xml或者json,如果实在不行下策就是请求转发到另外一个html页面
+在另外一个简答的html页面处理这个list数据,然后最后这个html会响应给ajax,但是最好还是讲list转成xml形式后者json形式
+表名是json最外层key名,list集合是外层key的值,list集合里面存的是一个个对象,每一个对象的key/value 由元组的属性和值构成
+
+
+4jquery的val()函数
+
+val()用于获得jq元素对象的value属性的值或者设置value的值  val只针对value属性,多用于表单字段,select框
+或者可以先用get得到js对象,再用value属性也可以得到属性值
+
+each(function(i){})  用于遍历jq对象集合,然后将每个遍历的对象的序号传给回调函数 ,函数中的this代表正在遍历的那个js对象
+
+$(xmldoc) 以xmldoc对象构造的jq对象对应的是根标签的jq对象  当然xmldoc可以正常使用document的方法
+
+find(exp)用于找出正在处理的元素指定的后代元素
+
+html("")和text()是替代性的复制,因此可以用于给元素清空,比如给select清空
+
+
+5json javascriptobjectnotation java s..对象表示法
+用js的语言描述数据
+json类似于xml 是不作为的js,用来存储数据
+{
+"employees": [
+{ "firstName":"John" , "lastName":"Doe" },
+{ "firstName":"Anna" , "lastName":"Smith" },
+{ "firstName":"Peter" , "lastName":"Jones" }
+]
+}
+[]表示数组 {}表示对象  对象中的数据以key:value表示(需要引号)  用逗号隔开
+json的key要用""括起来,值视类型而定
+json文件中存储的应该是一个对象  对象中再去存储数据
+
+所有表单字段的值 都是它们value属性的值,所以可以通过js的value属性得到 也可以通过jq对象的val()函数得到!!!!!!!
+json形式
+
+[
+     {"name":"重庆","cities":[""]}
+     {"name":"重庆","cities";[""]}
+     {"name":"重庆","cities";[""]}
+     {"name":"重庆","cities";[""]}
+     {"name":"重庆","cities";[""]}
+ ]
+
+xml形式
+<provinces>
+<province id="">
+<city></city>
+<city></city>
+<city></city>
+</>
+
+json和表十分好对应或者说list集合
+假如有个list stus;
+{
+ "stus":[{name:...:,age:...},stu2,stu3,stu4]   
+
+
+}
+
+所以jsp的代替技术就是ajax+servlet  返回的list数据或者类 转化成json格式 ,这样的话可以做到前后端分离
+
+
+6:list集合或者javabean 转 xml (方法)   Xsream的用法
+1导入xstream依赖的jar包
+2 Xsream xstream=new xstream();
+String xml = xtream.toXML(list);
+这个xtream类的toxml方法将类或者list转化为xml形式的字符串文本
+
+默认情况下,list的名字最为根标签,类的全路径名字做为子标签,bean类中的变量作为子标签的子标签
+
+可以设置标签别名
+xstream.alias("别名",类.class)  因为一个list里面可能类不一样 这里可以指定某个类,改变它转化为xml时的别名
+
+也可以将某个类中的变量作为属性而不是标签
+ Xsream.useattributefor(类.class,"某个变量的名字");
+ 
+Xsream.fromxml(file)将xml文件转化为list集合
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+但是要注意这里是一个xml形式的字符串...
+所以我们在servlet中返回的时候要设置, response.setcontentType("text/xml;character=""UTF-8")
+这里要设置返回的文本内容是text和xml..
+如果忘记返回的xml是什么样子,可以现在servlet中打印一下,记住标签顺序和名字即可
+
+
+
+
+7服务器与客户端交互数据的两种方式  json xml
+xml上面已经讲了用xstream将list或者bean转化为xml字符串,然后设置返回内容为text/xml(只有这样ajax那边收到的时候才知道这个字符串是一个xml),然
+后用write返回.
+
+
+7list 转json  这个工具叫json
+使用方法
+1添加json依赖jar文件添加到lib文件中
+(注意区分外部引入js或者css文件时的区别,外部引入的js或者css可以随便放置,然后在html去引用即可)
+2关键类
+JSONObject  简单的json对象{    }
+JSONArray   变成json数组[{},{},{}]
+
+一般来说集合用JSONArray,简单的javabean用jsonobject
+JSONArray jsonarray = JSONArray.fromObject(list); 返回的是JSONArray的实例对象,并不是一个
+String json = jsonarray.toString(); 具体什么样子可以打印出来看一下
+然后设置返回类型为text/html 用write()返回
+
+JSONArray返回的是一个json对象数组类似[{},{},{}]
+JSONObject返回的是一个对象{} 
+
+就是把类中的成员变量和值,当成key/value 组成一个json对象 {}
+list就是json对象的数组形式[{},{},{}] 
+key和value的名字与类中一致
+
+
+假如返回的是一个json对象数组
+那么$(json数组) 将这个数组转化为了jq对象 这个jq对象里面是一个个json对象,
+和jquery遍历js对象数组类似的,数组作为选择器后,each遍历的是数组中的每一个js对象
+
+不管是一个json对象还是数组 直接用each遍历就行 一个json对象的话也就是遍历一次,但是用each可以在回调函数中使用this.属性名来取值
+
+$(json对象或数组).each(function(){
+this....
+
+})
+注意:
+json字符串从服务器传到客户端是也是用write()  但是content-type用的是text/xml,并且在发送请求的$.post()方法中要写明第四个参数,标注
+返回值的类型为"json".
+
+$.post("url","data,"回调函数",返回值类型)
+                               xml/json
+
+  解析xml或者json 直接用jquer即可
+  $(xmldoc) 得到的是xml根标签的jq对象
+  $(json) 得到json数组的jq对象或者json对象的jq对象,直接用each()遍历即可
+  因为json实质上是js对象的数组,当js数组转化为jq对象时,jq对象中的每一个元素都是原来数组中的元素,所以用each遍历,
+  然后在each中用this引用当前的json对象,就是是只有一个json对象也可以用each遍历
+  
+  
+  可以不用jquery的方式,直接遍历json数组,用一个for()循环就行,然后遍历每个对象,取出数据,然后使用.
+  xml也可以使用原声js的方式解析 xmldoc看做document即可
+
+
+
+
+
+
+ 
 
 
 
@@ -85,3 +291,8 @@ load()方法,从服务器加载数据,并把返回的数据放入被选元素中
 
 
 
+
+
+
+ 
+ 
