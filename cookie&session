@@ -77,6 +77,9 @@ setValue();重新设置cookie的值
 所以用set方法改变了值之后要重新用addcookie返回给客户端
 (就好像 我们在登录qq时 记住了默认密码 当我们改变密码时 由于cookie没变 还是默认的 )
 
+getName() 可以得到cookie中所存数据的名字
+getValue() 可以得到cookie中所存数据的值
+
 setDomain(".baidu.com")
 用于指定只有请求了指定的域名,才会带上该cookie
 setPath("/cookdemo") 
@@ -129,22 +132,25 @@ session.getAttribute(String key); 返回值是一个object对象 意思是value�
         
         
 还有就是session是基于cookie的 因为会话的id被存储在cookie里面,当这个cookie 消失, 这个cookie 的名字是JSESSIONID
-由于cookie 默认path是web项目 所以同一个web项目下的页面共享cookie 所以所有servlet 中去得到会话时也是通过这个名为sessionid的cookie去创建
+由于cookie 默认path是web项目 所以同一个web项目下的页面共享cookie 所以在所有servlet 中去得到会话时也是通过这个名为JSESSIONID的cookie去创建
 如果已经有了这个jsessionid说明 已经创建会话,那么再用getsession去创建就会得到当前的会话,
 session有效期为30分钟,关闭浏览器后session不会销毁,因为他是存在于服务器中的,30分钟后才会销毁,但是为什么关闭浏览器后我们无法得到以前的session存的
 东西? 因为存放当前sessioid 的cookie在浏览器关闭后销毁了,id没了  就无法通过id 去找到这个会话
 
 那么怎么办呢?想要关闭浏览器后任然可以访问这个session 那么只有设置cookie的有效期
+session对象的getId()方法可以得到会话的id的值,这个值存储在一个cookie上的
+
 首先得到session的id值
 String id = request.getSession().getId();
 Cookie cookie = new Cookie("JSESSIONID",id);//创建一个新cookie  名字一样值一样来代替默认的cookie 
-cookie.setMaxAge();设置有效期
+cookie.setMaxAge("...");设置有效期
 reponse.addcookie(); 添加到客户端    
 
+存储会话id的cookie的名字为JSESSIONID 值为getId()
 
-
-
-
+关于session的作用范围,由于session是基于cookie的,所以只要我们访问一个页面能把存了当前会话id的cookie带过去,那么就能访问当前会话
+不管是页面还是servlet中都可以访问. 系统创建的存了jsessionid的cookie路径是当前项目的根目录,因此项目下所有文件都可以访问cookie和session
+除非重新设置这个cookie的路径,这样可以限制某些页面共享会话.
 
 
 
