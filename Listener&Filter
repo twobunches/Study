@@ -1,1 +1,329 @@
+一:Listener 监听器
+监听某一个事件的发生,状态的改变
+监听器的原理:其实就是接口回调
+什么叫监听回调呢?
+ 比如有两个类A B,当A类中的某个方法执行了5次之后,然后执行B中的方法
+ 那么可以事先传递一个对象给A的方法,在某个时候调用,但是并不是传递一个对象,也不能new 对象
+ 因为我们可能在a中调用的B可能是以后写的某个类,所以应该在a中创建接口,那么我们使用a监听什么东西后想要调用的类方法
+ 由自己写.  
+ 
+ A中某一个事件的发生,需要通知某个B类,然是B事先是不清楚什么类型的,所以事先创建具有一定规范的接口,我们调用接口中的方法
+ 后来者想要在事件发生的时候调用自己想要的方法,那么就就可以实现这个接口,并且在使用A的时候传递实现类的对象
+ 
+ 
+ 简单来说就是A类的方法可以监听事件的发生,当事件发生的时候要执行的方法不是固定的,所以A中方法定义了接口,使用接口中的方法
+ 那么后来者使用a监听事件,然后实现这个接口,调用自己的方法
+ 
+ 二:web监听器 总共8个 划分为三个类型
+ web监听器类似于上面说的接口,当某个事件发生,执行接口中的方法,我们需要做的就是重写这8个接口,然后注册,在事件发生时,可以执行我们规定的方法
+ 
+ 监听三个作用域创建和销毁
+   监听 httpServletrequest(request) httpsession(session) servletcontext(application) 这三个作用域 对应三个监听器,其实就是接口
+   
+     1 httpsessionListener
+     使用方法同二
+      访问html 页面 不会自动创建session
+      访问jsp 页面  自动创建session 因为jsp有内置对象
+      访问servlet 如果不使用getSession()方法就不会创建session
+     当创建session回执行session初始化方法
+     当session销毁的时候 会执行销毁方法  session默认30分钟后销毁,当f非正常关闭服务器也会销毁,注意关闭浏览器只是无法访问这个session了
+     但是session还没销毁,因为关闭浏览器cookie消失了,但是session还在,只是不能访问,正常关闭服务器会钝化session
+     
+     作用:统计在线人数
+     
+     2servletcontextListener
+     使用方法:
+     创建类实现这个接口,然后在xml里面注册这个监听器.当注册了这个类之后,那么web项目在某个事件发生的时候,就会调用这个方法
+     注册方法:在web.xml里面添加<listener>
+     <lintener-class> 监听器实现类的全路径名字 </listener-calss>
+     </listener>标签
+     
+     和servlet不同,servlet需要注册两个标签一个<servlet> 一个<servlet-mapping>
+     
+     里面有两个待重写的方法  一个是初始化 一个是销毁
+     当servletContext这个作用域创建的时候触发事件,调用初始化中的方法...
+     当servletContext这个作用域销毁的时候触发事件,调用销毁中的方法...
+     servletContext在web工程加载到tomcat时就创建,当移除后才销毁....
+     
+     作用:利用这个servletcontext监听器在web项目刚刚加载的时候,完成自己想要的初始化工作,执行一些自定义任务
+     
+     3ServletrequestListener
+     使用方法同二
+      request创建和销毁的时机:
+      当访问jsp html servlet或服务器任意资源 就会创建request
+      当吴福气对这次请求做出了响应之后就销毁
+      这个接口用于监听request的初始化和销毁,我们可以重写这两个方法以便在request创建或销毁的时候执行一些我们想要的动作
+ 
+     作用: 作用不多
+     
+     
+   监听三个作用域属性状态变更的监听器接口
+      
+    ServletRequestAttributeListener
+    httpSessionAttributeListener
+    servletContextAttributeListener
+ 
+     这三个监听器接口要重写的方法名字都一样
+      
+     attributeAdd()    添加
+     attributeremoved()    移除
+     attributeAddreplaced()  更新
+      
+     使用方法:实现接口,然后注册监听器,然后当相应作用域的属性发生变化时会使用我们所重写的方法
+ 
+
+   监听httpsession里面存值的状态变更,   这一类监听器比较特殊,不用注册
+   1HttpSessionBindingListener   
+   有两个要重写的方法  valueBind()值绑定  valueUnBind()值被解绑
+   
+   让javabean实现这类接口,然后当session添加(add)javabean类的对象作为属性时,就会执行valueBind()
+                            当session移除(remove)javabean类的对象时,就会执行valueunbind()
+   用处是监听某个对象 是否月session绑定或解除绑定  一般这个对象是javabean的实例
+   
+   这个与httpsessionattributelistener相比较范围小一点,但是精度高了,用于专门检测httpsession绑定与解绑某个对象,
+   要监听某个类就让这个类实现httpsessionbindingListener这个接口,不需要在xml中注册
+   当
+   
+   不需要注册的原因也很简单,当绑定对象时(setatteibute)需要输入对象值,那么就可以使用对象中的重写方法
+   
+   这个的用处很广
+   
+   2HttpSeesionActivatinListener  
+   用于监听session的值是 钝化(序列化)还是活化(反序列化)
+   序列化:把内存中的数据,存到硬盘上
+   反序列化:把硬盘上的数据,存到内存上
+   
+   这一类接口有两个重写方法
+   sessionwillPassivate()  session中的值将要钝化(序列化)会执行这个函数  在session还没有过期的情况下,正常关闭服务器就会钝化
+   sessionDidactivate()   session中的值将要活化(反序列化)会执行这个函数   也就是将要使用session中存在硬盘上的值就会活化(反序列化),在
+                                                session还没有过期的情况下.开始服务器就能活化数据
+   
+   
+   当然要实现session的钝化活化,javabean除了要实现activete监听器接口,还要实现序列化接口Serializable
+
+    
+   使用方法:还是让javabean实现这个接口,以及序列化接口Serializable  
+           
+   不管是绑定监听还是序列化监听都是针对 存入httpsession的某个类,一般来说是javabean 
+   这两个监听器为了javabean以及session服务的 因为两个用的最多
+   
+   HttpSeesionActivatinListener并不能监听session所有值的钝化活化,只能监听 实现了这个接口的类的实例对象 
+   
+   钝化活化的用意何在:因为session的值会很多,那么当我们很长一段时间不适用session中的某个值,那么就将它钝化,用的时候再活化
+                      这样可以减轻内存压力.而这个监听器就可以监听某一类对象的钝化 活化        
+ 
+ 
+ 三 如何配置session在一定时间内钝化活化  三种方式
+ 1.在Tomcat里面的 conf/context.xml中配置
+   对运行在所有运行在这个服务器的项目生效
+ 2在conf/catalina/localhost/中新建一个context.xml 然后配置
+   仅对localhost域名生效
+ 3在web工程的 META-INF/新建一个context.xml配置(一般用这种)
+  仅对当前项目生效
+  
+ 在contex.xml中添加下列标签
+ <Context>
+<Manager className="org.apache.catalina.session.PersistentManager" maxIdleSwap="1">
+	<Store className="org.apache.catalina.session.FileStore" directory="session"/>
+</Manager>
+</Context>
+maxIdleSwap:一分钟不用session中值就钝化
+directory:钝化后文件存放的位置(相对路径,随便写个文件夹名字就ok)
+
+
+这个配置是让session所有值都序列化,但是只有实现了httpsessionactivelistener接口的javabean的实例对象才能在钝化活化的时候触发函数
+
+四:Filter(用处频繁)
+1.过滤器, 其实就是对客户端发出来的请求进行过滤,浏览器发出,然后服务器派servlet处理,在中间就可以过滤,其实过滤器起到的作用就是拦截.
+         过滤器可以对不同的请求做统一的某些处理,高效,简单.比如可以在过滤器中写编码格式,那么就不需要在每个servlet中都写编码格式的代码了
+2如何使用Filter
+1定义一个类 实现Filter接口
+2注册这个Filter, 其方式和注册servlet一模一样,只不过标签名是Filter
+3访问过滤器的话需要访问他的url,这个和servlet一样
+4但是我们需要的是 在访问某个servlet之前访问过滤器就行过滤操作,所以一般在注册的时候,过滤器的url-pattern会写成/*
+/*表示无论什么请求都可以访问这个过滤器
+5http请求会先前往过滤器,再去servlet  前提是这个http请求符合Filter的url
+6<filter>
+    <display-name>FilterDemo</display-name>
+    <filter-name>FilterDemo</filter-name>
+    <filter-class>com.study.filter.FilterDemo</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>FilterDemo</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+
+7将url-patter改称/* 就可以匹配所有的url了 无论什么都可以访问Filter,过滤器的访问顺序是高于servlet的  前提是我们能够访问到这个fileter
+
+
+五Filter过滤器的生命周期
+重写的filter接口中有三个方法
+destroy()   过滤器销毁会访问这个函数,服务器停止的时候过滤器就销毁
+doFilter()  http请求访问过滤器的时候会执行这个函数dofilter(),最重要的是这个,要在这里面写逻辑代码
+init()   过滤器始化会执行这个方法  服务器启动会初始化过滤器
+
+6多个过滤器的执行顺序 
+  doFilter(request,response,filterchain chain) 三个参数  一个请求,一个响应,一个过滤器锁
+  第三个参数用于放行的,当访问过滤器后,过滤器可以选择放行,也就是前往下一个过滤器,过去前往servlet
+  chain.doFilter(request, response);//用于放行函数()chain对象的dofilter
+  如果不放行的话,就会前往filter默认的跳转页面,因为filter页面response参数
+  
+  filter的执行顺序和在web.xml中注册filter的顺序一样,就是谁在前面.谁就先执行
+  
+  过滤器放行 chain.doFilter(request, response);
+
+7细节
+1init方法的参数 filterConfig 用于获得filter注册的名字,以及filter在xml中写上初始化参数
+2在doFilter()方法中 使用chain参数 调方法放行chain.doFilter(request, response);
+3关于filter的url-pattern写法
+   1写上某个页面或者servlet的全路径名字  可以指定filter只过滤指定的文件
+   2/* 是对全部生效
+   3部分拦截   比如/study/*  这个就只对study文件夹下的所有页面生效   
+   因为只有/study/....这样的路径才能访问这个过滤器
+   setvlet的url也可以设置为多层路径!!!!!!!!!!
+   
+   比如想要某一类的servlet  可以让servlet 的URL为 /a/不同的名字  过滤器可以为/a/* 很明显这个过滤器就拦截/a开始的servlet
+ 4 url-pattern 里面是相对路径,相对于web项目根目录
+   
+5chain.doFilter(request, response);前面的代码会在http前往服务器的时候执行,他后面的代码会在服务器前往浏览器的时候执行
+
+6在注册filter时,<filter>标签里面有一个<dispatcher>标签
+
+<dispatcher>REQUEST</dispathcher>  设置这个表示该过滤器,只要接收到请求就执行过滤
+<dispatcher>FORWARD</dispathcher>  设置这个表示该过滤器只要是请求转发,就执行过滤器
+
+
+
+
+
+8注意cookie和session
+
+我们使用cookie多数是让用户登录成功后,服务器将账号密码返回给浏览器,设置一定时限,那么下次访问页面的时候,如果过滤器
+收到了那个没过时的cookie,就帮助用户自动登录,所以cookie+filter 实现的是自动登录
+
+而session(会话)的作用的在服务器上保存数据,首先要了解的是虽然我们自动登录了,但是一个网站顶端在登录后始终会有用户信息显示出来,
+假如我们没有将用户信息存入session,那么根据http的无记忆性,没进入一个新页面,在没有session存用户信息的情况下我们都需要在登录一次.
+所以session解决了我们在一次会话的情况下,让所有页面都共享数据,也就是让页面有了"记忆".
+
+在存储sessionid的cookie的有效时间内,所有的页面都是共享session的信息的,当这个cookie消失的时候,就无法再去访问之前那个session了
+
+session的过期时间是从session不活动的时候开始计算，如果session一直活动，session就总不会过期，从该Session未被访问,开始计时;
+一旦Session被访问,计时清0;
+设置session的失效时间,session.setMaxInactiveInterval(30 * 60);//设置单位为秒，设置为-1永不过期
+                              最大不活跃间隔(从这也看得出会话是从未被访问开始计时的)
+
+设置一个session的有效时间从两方面考虑:第一是session本身的持续时间 第二时存id的cookie的生存时间
+假如session设置很长时间,但是存储id的cookie消失了,那么即便会话不消失,也不能访问了.
+
+
+在前端表单中,表单的数据在点击submit按钮后发送到指定地址
+
+EL表达式中判断作用域是否存在某个属性使用的是 empty 属性名  或者not empty
+
+
+9BeanUtils工具(解析表单数据,快速存值到一个javabean中)
+当表单提交的数据很多的时候,可以使用这个工具在servlet接受数据的时候打包成一个Bean,而不是需要我们一个个去接收
+使用方法:
+1添加beanutils的依赖jar包 有两个一个log..一个beanutils..
+2使用BeanUtils类的静态方法  populate()方法
+BeanUtils.populate(bean,map);第一个参数需要我们新建一个bean来接受参数,第二个参数是 一个map类
+我们接受参数的时候可以通过map接受  接受参数有三种方式 1getparameter 2getparameternames 3getparametermap
+用第三中map形式接受参数
+BeanUtils不直接支持String到date的转换,因为我们map接受的参数值都是String类型
+而万一我们定义的javabean中的生日为date类型,那么就会转化失败
+针对这种情况BeanUtils提供一种解决方案
+重写beanutils 的Convert接口,实现里面的convert方法,在哪个方法里面写上String类型转化为date的详细过程
+public class MyDateConverter implements Converter {
+
+	@Override
+	// 将value 转换 c 对应类型
+	// 存在Class参数的目的是编写通用转换器，如果转换目标类型是确定的，可以不使用c 参数 这个
+	public Object convert(Class c, Object value) {
+		String strVal = (String) value;
+		// 将String转换为Date --- 需要使用日期格式化
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		try {
+			Date date = dateFormat.parse(strVal);
+			return date;
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+}
+
+使用ConvertUtil.register(new MyDateConverter(),Date.class); 注册转化器
+
+比如beanutils.populate()方法在将map移到bean的过程中 出现了无法将String转化为date的情况
+它会调用注册的转化类中的convert()方法,并且传给它Date.class和当前的String,
+
+类似于Bbutile的query()方法,这个很好理解;
+
+这里让我们重写方法不是让我们去转化,而是如果在转化过程中出现问题,那么就会调用这个方法去讲这个值转化为想要的类型
+
+
+
+
+
+
+
+
+10 
+Date类(类 Date 表示特定的瞬间，精确到毫秒)
+常用的构造方法就两个,一个是date()  一个是date(long l)
+当创建(new )date对象时如果没有指定参数,那么就是按照当前系统的时间来构造的date对象
+当然也可以指定一个long(以秒为单位)的整数来构造指定的时间,指定的时间=1970年1月1日+参数时间换算成的天餐椅
+说以参数long=指定时间-1970-1-1
+date对象可以直接打印,它的toString方法被java重写了 会打印出当前时间(按照默认格式)
+date类的getTime()可以得到当前date所转化的秒数(当前表示时间距离1970的秒数),很好用的方法
+
+
+当然也可以使用simpledateformat来进行格式化输出时间
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    以指定格式构造sdf对象 
+    然后format(date); 这个方法可以将日期对象 转化成指定格式的日期字符串
+    parse(String) parse()方法可以指定的格式解析日期字符串,然后返回日期对象
+    simpledateformat只是单纯用来格式化date对象的 或者将指定格式字符串转化为对象的
+    但其实灵活运动它这可以通过parse来获取我们想要的date对象
+
+
+注意区分:"null"  和 null  一个是字符串 一个是空指针
+
+
+
+11如何判断会话是否有效
+ 只需要通过getsession()然后去取里面任意一个属性,如果不见了,说明这个session不是之前的session,而是新的会话.
+ 通过session里面的值来判断会话是否有效
+
+ 我们在过滤器是否进行自动登录,首先要根据会话是否已经失效,如果没失效,是不需要进行自动登录的,因为信息还保存在session中,页面可以得到session中的数据
+ 如果session失效的话,就需要根据是否存在Cookie来判断,有cookie则进行登录,这里说是登录,其实就是通过账户密码得到用户信息然后存在session中.然后前往页面
+ 没Cookie则直接前往页面即可 在jsp页面中判断session中的是否存在用户javabean,存在则取出呈现登录的样子,不存在则呈现请求登录的样子
+ 
+12自动登录的思路总结
+1前往首页.点击登录,前往登录页面
+2登录成功后账号,密码存到cookie中返回给客户端
+3用session存用户信息,用于所有页面共享,然后跳转回主页
+4创建过滤器(实现filter类),在web.xml中注册,设置指定路径
+5下一次访问页面的时候,由于filter先于这个页面访问,在filter中判断会话是否有效,会话有效则不需要进行自动登录,不存在则根据
+cookie是否存在进行自动登录,但说是自动登录其实就是根据cookie存的账号密码去查找数据库,得到用户信息,然后绑定
+到新的session上,然后前往主页,在主页jsp页面根据session中是否有用户信息呈现不同的界面
+6index或者其他所有页面 它们判断是否已经登录 是根据session,若跟session中存有用户的信息,则显示已经登录的状态
+如果session中什么都没有,表名还没有进行登录,此时呈现需要登录的状态
+
+ 
+ 注意我们平时在网页上登录的时候,有密码和账号自动填在框中,这个是我们上次在提交表单的时候浏览器询问我们是否要存在它里面的,这个不叫cookie
+ 这个是浏览器的行为,因为我们可以选择不让浏览器存储,这个和我上面写的自动登录时不一样的,自动登录的cookie是服务器发给浏览器的.
+ 
+13关于filter和servlet或页面
+如果一个URL能够同时访问filter 和servlet或者页面,那么filter是优先访问的,因为filter本来就是用来过滤的
+最简单的办法是设置filter的URL为/*,那么访问所有页面都会先访问过滤器
+
+如果只想过滤一部分页面,那么就合理设置filter的/*,比如/a/* 这个过滤器只能在/a/.... 这种地址下触发 像/a/c /a/b这些文件就可以使用这个过滤器
+
+也可以只过滤某一个页面,直接让过滤器url和页面的url一样即可
+
+
+
+
 
