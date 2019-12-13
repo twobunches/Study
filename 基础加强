@@ -1,0 +1,85 @@
+一注解 annotation
+1:@Override 声明当前方法是重写父类的方法
+2:@Test 这是junit中的注解
+3@SuppressWarning("unused") 
+用于抑制编译器警告的注解 比如这个就可以用来抑制某个变量或方法没使用时给我们的黄色警告
+4@Deprecated 声明方法为过时的方法,不建议使用
+
+JDK中的除了test 有上述三种原声注解
+注解可以在变量,方法,类上面使用
+注解中可以添加属性  比如@SuppressWarning("unused") 
+比如@Test(timeout=100)  可以声明在单元测试的时候运行时间不超过100毫秒
+
+注解有作用范围:
+编译期间有效:@Override @Deprecated @SuppressWarning  用于告诉编译器
+运行期间有效:@junit  
+源码期间有效:@author @since这些注解是在源码期间有效 String类源码上面的注解
+
+注解是一个和类,接口,枚举在同一个层面的数据类型
+
+二自定义注解
+直接创建文件的时候选择Annotation 或者如下格式创建文件
+
+格式 public @interface 注解名{
+  public long timeout();注解自定义属性以方法的形式定义属性
+  public Class c();
+}
+注解的属性需要加上(),注解的属性类型有 基本数据类型, String ,Class,注解类型,枚举类型 以及上述类型的一维数组类型
+
+自定义注解作用:配置作用
+比如在tomcat的web3.0下没有web.xml文件
+在每个servlet上面有一个注解@webservlet("url") 这个注解可以用于给servlet匹配路径
+当我们访问这个url的时候,那么这种形式下由于没有xml,那么tomcat回去找所有类的class文件,
+查看哪个文件中注解带有这个url的,然后找到这个类class文件之后,通过反射创建对象,然后使用
+
+注解有个文件,由于注解是写在类中,当我们生成class文件打成jarbao发送的时候,用注解配置的数据就不可更该了,而用xml的形式还可以更改
+
+注解什么时候用?
+如果配置信息不会发生修改的时候,比如servlet的路径,建议使用注解的形式
+如果配置信息经常变化,建议使用properities xml
+
+后面的框架中一般使用xml,和注解配置信息
+
+注解的作用:
+1可以用来辅助生成帮助文档
+2编译检查
+3用于做配置信息吧
+
+使用自定义注解:
+
+public @interface myAnnotation{
+  public long timeout();
+  public String[] str();
+  public Class c();
+}
+
+在使用这个注解的时候:
+可以使用属性,也可以不使用属性
+@myAnnotation(timeout=100,str={"","",""},c=.class)
+public void text(){
+
+}
+
+怎么读取属性?
+通过反射读取字节码上的注解信息
+
+三什么是Class对象?
+Class文件是java文件编译后生成的字节码文件,用来给机器读的,java文件是我们程序员写的,给我们读的
+而class对象就是字节码文件在内存中的对象,很明显一个类它有无数的类对象,但是字节码文件的对象只有一个
+
+ Class clazz = Class.forname();获得类的class对象并加载这个类的字节码文件到内存
+Method[] methods = clazz.getMethod();可以获得字节码对象所代表类中的所有方法对象数组
+这个数组中的每一个方法对象代表了类中的每一个方法
+method.getName();可以获得方法对象所代表的方法的名字
+method.isAnnotationPresent(注解.class)判断方法上是否存在某个注释 
+method.invoke(obj,参数列表)对带有指定参数的指定对象调用由此 Method 对象表示的底层方法。
+由于可能这个方法不知道存在于当前类还是父类,所以传入指定对象,以及这个方法所需的参数即可调用成功
+
+
+四
+@Retention(source/runtime/class);可以设置自定义注解的作用范围  这个注解是java自带注解(元注解),使我们写自义定注解时规定范围使用的
+@Target(ElementType.method)这个元注解用于指定自定义注解是加在什么元素上面的  
+自定义一定要加这两个元注解,不然无法通过Method类的isAnnotationPresent 在方法上找到这个注解
+
+
+
