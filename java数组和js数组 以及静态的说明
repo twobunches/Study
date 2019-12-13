@@ -13,6 +13,9 @@ String str = new String[]{};
   Student[] stus = new Student[]{};
   
   注意区别,别搞了,创建对象很明显用(),创建数组的时候由于要申明长度后面先用[]申明长度再用{}装初始化数据
+  当然java数组也可以省略new..直接用花括号{}赋值,一维二维都可以
+  比如 int[] a= {1,1}; int[][] arr={{},{}}
+ String[] b={}; String[][] b={{},{}}  
   
          
 2javaScript数组
