@@ -1,0 +1,22 @@
+1java数组的写法
+比如有一个Student类
+Student[] stu = new Student[]{...}; 
+静态初始化由我们给定长度 动态初始化由程序员给定初始化值
+String str = new String[]{};
+
+二维数组 String[][] str = new String[][]{{},{}};
+         int[][] x = new int[3[3] 静态初始化 Student[] stus=new Student[5];
+         int[][] x = new int[][]{{1,2,3},{4,5,6},{7,8,9}};
+         
+  Student stu = new Student();这是创建对象
+  创建对象数组的时候
+  Student[] stus = new Student[]{};
+  
+  注意区别,别搞了,创建对象很明显用(),创建数组的时候由于要申明长度后面先用[]申明长度再用{}装初始化数据
+  
+         
+2javaScript数组
+
+var array = new Array("","",""); 固定使用new Array来创建数组
+
+var array = ["","",""]; 直接这样用中括号赋值 二维数组的话[[]] 中括号内嵌套中括号
