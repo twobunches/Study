@@ -261,10 +261,10 @@ public class MyDateConverter implements Converter {
 类似于Bbutile的query()方法,这个很好理解;
 
 这里让我们重写方法不是让我们去转化,而是如果在转化过程中出现问题,那么就会调用这个方法去讲这个值转化为想要的类型
-
-
-
-
+ps:
+其实Beanutil提供了一个的DataConvert类,这个类用于在调用populate方法的过程中如果遇到String转Date无法转换时,就会调用这个类
+需要调用ConvertUtile.register()注册这个类,其实就是类似于Beanhandle一样,不需要我们自己去写了,BeanUtile提供了写好的,只需要我们去注册就行
+因为不注册的话,在转化过程中出现问题是不会去使用这个类的
 
 
 
