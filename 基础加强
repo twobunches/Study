@@ -195,6 +195,33 @@ get方法的处理方式只能是在servlet中先用getbyte转码再解码才行
 3第三种方案是,在过滤器中使用装饰着模式,装饰httpservletrequest类,重新实现接口,然后增强方法,其他方法使用传进来的request调用方法
 
 
+六:关于class.getmethod() ps:只能得到public属性的方法
+这个方法用于获得class对象所代表的的类或接口中的方法对象(包括他们的超类或者超接口中的方法)
+有一点需要注意的是,在BaseServlet中重写service,然后让servlet继承benaservlet,虽然按照常规
+在Baseservlet中不能获得servlet的方法,因为servlet是子类,
+但是由于我们发送http请求到servlet时,获得的是servlet的一个实例对象,然后依次执行inti方法,如果没有则执行父类中的init方法
+然后执行service方法,如果没有则执行父类方法,所以,假如我们创建的是Baseservlet的实例对象,当然不能获得子类方法,但是我们获得的是
+servlet的对象,它去调用了父类的方法,所以Baseservlet父类中的this代表的是servlet对象的.
+子类是可以使用父类的方法的,这里是使用子类的对象去调用的父类方法,自然父类方法中的this代表方法所属的对象,也就是子类对象咯 
+
+
+7创建通用的baseservlet
+实际上一个serlvet的执行顺序是先init.然后service然后destroy
+
+写一个baseserlvet继承httpservlet,重写service方法,通过反射得到调用这个方法的类中所有的方法
+然后让servlet 继承baseservlet,在里面写各种逻辑代码,返回跳转页面,在这个servlet中写的其实是各种方法
+这些方法由service去调用的
+
+this:
+1代表this所在方法所属类的一个实例对象
+2代表调用this所在方法的一个对象
+所以如果子类对象调用父类方法,那么this可以代表子类对象
+
+
+也就是我们写servlet后,注册这个servlet,那么在访问servlet回得到这个servlet的对象,继承baseserlvet
+会调用baseservlet的service方法,service方法然后通过反射使用this调用servlet中的方法,
+而这个方法中写上原来我们在doget()里面要写的内容,然后如果要跳转页面则返回路径,否则返回null
+在beanservlet中除了要嗲用这个方法外,还要判断是否要进行页面跳转
 
 
 
