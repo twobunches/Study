@@ -205,7 +205,7 @@ servlet的对象,它去调用了父类的方法,所以Baseservlet父类中的thi
 子类是可以使用父类的方法的,这里是使用子类的对象去调用的父类方法,自然父类方法中的this代表方法所属的对象,也就是子类对象咯 
 
 
-7创建通用的baseservlet
+七创建通用的baseservlet
 实际上一个serlvet的执行顺序是先init.然后service然后destroy
 
 写一个baseserlvet继承httpservlet,重写service方法,通过反射得到调用这个方法的类中所有的方法
@@ -224,6 +224,8 @@ this:
 在beanservlet中除了要嗲用这个方法外,还要判断是否要进行页面跳转
 
 
-
+八:tomcat的动态java工程中java文件所依赖jar包放在web-inf的lib中
+ html页面中使用jquey或者bootstrape所以来的js文件或css文件不是放在lib中,lib中只放java程序依赖的jar包
+ js文件是在项目根目录下随便建立一个文件夹存放即可,只要引用的使用找到位置就行
 
 
