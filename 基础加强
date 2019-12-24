@@ -222,10 +222,31 @@ this:
 会调用baseservlet的service方法,service方法然后通过反射使用this调用servlet中的方法,
 而这个方法中写上原来我们在doget()里面要写的内容,然后如果要跳转页面则返回路径,否则返回null
 在beanservlet中除了要嗲用这个方法外,还要判断是否要进行页面跳转
+在基础的servlet中的方法不用doget和dopost了,把他们的名字改了,改称相应功能的函数,参数还是和doget和dopost一样
+
+
 
 
 八:tomcat的动态java工程中java文件所依赖jar包放在web-inf的lib中
  html页面中使用jquey或者bootstrape所以来的js文件或css文件不是放在lib中,lib中只放java程序依赖的jar包
  js文件是在项目根目录下随便建立一个文件夹存放即可,只要引用的使用找到位置就行
+
+
+九:对于一个类来说只要里面有main函数就可以运行到虚拟机,否则只能使用junit单元测试运行
+
+十:
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
