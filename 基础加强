@@ -234,19 +234,50 @@ this:
 
 九:对于一个类来说只要里面有main函数就可以运行到虚拟机,否则只能使用junit单元测试运行
 
-十:
+十:${pageContext.request.contextPath}是JSP取得绝对路径的方法，等价于<%=request.getContextPath()%> 。
+也就是取出部署的应用程序名或者是当前的项目名称。
+
+比如我的项目名称是SSM在浏览器中输入为 http://localhost:8080/SSM/index.jsp
+${pageContext.request.contextPath}或<%=request.getContextPath()%>取出来的就是/SSM,
+而"/"代表的含义就是 http://localhost:8080
+
+getcontextPath()这个方法得到是当前项目文件的绝对路径,也就是项目的根目录,得到的是/项目名称
+
+十一:
+在tomcat下不论是servlet中还是html或者jsp页面,不管jsp页面在哪个文件夹中,默认的相对参考路径都是web项目的根目录
+参考路径=http://localhost:8080/项目名称
+
+十二:对同一表,或者换一句话说,对同一个对象进行操作的话,这些都可以放在一个servlet中,然后创建不同的方法,
+需要进行跳转的返回路径,不需要跳转的返回null,然后在访问这个servlet时加上方法名字,由baseservlet来调用方法
+这样可以有效减少servlet的数量
 
 
+十三:BeanUtil的底层实现原理
+
+通过反射得到javaBean中的各种set方法,然后用正则表达式判断,(比如 怎么判断setUsername 和username 是一致的)
+当判断出有setusername这个方法后,就调用setsuername方法 去取username的值
+
+Beanutil默认只能将String转给String,所以如果有String转date的话需要 自己写一个转换器实现convert接口 然后用convertutil,register注册
+或者使用这个工具类自带的方法 DateConvert  然后设置时间的模式 注册即可  
+
+当使用populate方法无法转换时,会调用我们注册的转换类将String转化为date 然后再将这个date赋值给javabean中的date
+
+十四:邮件服务器
+安装软件,管理各个邮箱账户中的邮件  接收/发送
+邮件协议:发送SMTP 接受:POP3/pop/imap
+作用:约定了邮件在网络中的传输格式
+
+怎么在系统中搭建邮件服务器:
+直接得到安装包,安装即可 比如易邮服务器,这是一款接受和发送一体的邮件服务器
+一般来说发送邮件的服务器和接收的是分开的,
 
 
+安装邮件客户端:如Foxmail
+客户端用来连接邮件服务器的,因为要使用服务器的功能...就好像SQLyog一样
+可以理解为QQ邮箱app,就是一个客户端,连接到腾讯的邮件服务器,我们只需要使用客户端就可以使用发送接收功能
+查看自己的邮件
 
-
-
-
-
-
-
-
+可以通过Foxmail来连接不同的邮件服务器,比如163 腾讯的 或者重大自己的邮件服务器,只需要上官网查看一下他们公开的服务器地址即可
 
 
 
