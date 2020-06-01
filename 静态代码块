@@ -1,0 +1,69 @@
+类中
+静态代码块  非静态代码块 构造函数执行顺序
+
+静态代码块 > 非静态代码块 > 构造函数
+
+当有子父类继承关系的时候
+
+父类的优先执行  但是总体顺序和上面一致
+大致为:
+父类静态>子类静态> 父类的非静态代码块>构造函数>子类的非静态代码>子类构造函数
+
+静态代码什么时候执行(类被加载的时候)   类什么时候被加载?
+1当类的静态方法被使用的时候执行
+2当类被实例化的时候执行
+3使用class.forname()加载类
+
+但是要注意的是类加载不一定会执行非静态代码块和构造函数
+构造函数和非静态代码块只有在实例化对象的时候会执行
+当然实例化子类的时候会也会优先实例化父类 
+
+
+package com.study.hibernate;
+
+public class test extends test1 {
+	static{
+		
+		System.out.println("子类静态方法");
+		
+	}
+	{
+		System.out.println("非静态代码块");
+	}
+	
+	public test(){
+		System.out.println("构造函数");
+		
+	}
+	static void testmethod(){
+		
+		System.out.println("静态方法");
+	}
+	
+	
+	public static void main(String[] args) throws ClassNotFoundException{
+		testmethod();
+		new test();
+		System.out.println("主函数");
+		
+		
+	}
+}
+
+class test1{
+	
+static{
+		
+		System.out.println("父亲静态方法");
+		
+	}
+	{
+		System.out.println("父亲非静态代码块");
+	}
+	
+	public test1(){
+		System.out.println("父亲构造函数");
+		
+	}
+	
+}
