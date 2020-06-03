@@ -59,7 +59,7 @@ ORM:对象关系映射 将java中的类和数据库中的表对应起来
   <mapping resource="路径com/study/hibernate/Customer.hbm.xml"/>  这个mapping是引入我们建立好的映射 也就是hbm 路径用/分开 相对路径
   <property name="hibernate.show_sql"></property>   控制台显示sql语句
   <property name="hibernate.format_sql"></property>  格式化
-  <property name="hibernate.hbm2ddl.auto"></property>  自动创建表 常用 update(如果没有则会创建和更新) validate(校验表名和类名是否存在)
+  <property name="hibernate.hbm2ddl.auto"></property>  自动创建表 常用 create 如果有则覆盖 update(如果没有则会创建和更新) validate(校验表名和类名是否存在)
   </session-factory>
 	</hibernate-configuration>
    
@@ -188,6 +188,8 @@ get和load的区别?
   2使用sqlquery
   session.createsqlquery("sql查询")
   
+  clear()方法可以清除所有一级缓存 evict()可以删除某个缓存记录
+  
   
   
    六持久化对象
@@ -198,22 +200,117 @@ get和load的区别?
        反射 IOC 
        Class class = Class.forName(className);
        Object object = class.newInstance(); // 只能调用无参构造函数   
-   Ⅱ
+   Ⅱ持久类中的属性用包装类类型 比如 Long Integer Double
+   Ⅲ动态代理 只能代理实现了接口的类
+   Ⅳ持久类不要使用final修饰  因为在hibernate中有个很重要的lazy加载 返回的是一个代理对象  使用的是javasist
+   可以对没有实现接口的的类产生代理, 通过继承这个类来代理 如果被继承了 那么lazy不能实现
+   
+   七主键生成策略
+    Ⅰ自然主键
+     主键本身就是表中的一个字段,实体的一个具体的属性,比如一个学生有唯一的学号,用学号作为主键就是自然主键
+     Ⅱ代理主键
+     主键本身不是表中必须的一个字段,或者说不是一个实体实际具有的属性,比如在各种APP中看见的UID
+     并不是说代理主键不能唯一标志实体,比如随机生成的ID也能唯一标志用户,
+     
+     
+     在开发中尽量使用代理主键,因为我们不可能让用户自己去输入主键,比如学号?,万一学生输入错误了怎么办?
+     所以学号虽然能唯一标志学生,但是不用它作为主键,而是用我们自己的方法去生成一个能唯一标志用户的主键
+     
+     在hibernate中的主键生成策略:(hibernate会帮我们自动生成唯一的主键 不需要我们在插入数据的时候去手动生成主键)
+     1increment: hibernate本身提供的自动增长机制.适用于用long int 或short类型作主键
+   	  hibernate会在插入数据会发送select max(id主键) from 查询最大值 然后用id+1作为下一行的主键,这会导致线程不安全
+     2identity	.适用于用long int 或short类型作主键,使用的是数据库底层的自动增长机制
+     3sequence 适用于用long int 或short类型作主键 采用的是序列的方式
+     4uuid 适用于字符串类型的主键 使用hibernate中的随机生成方式生成字符穿
+     5native 本地策略  在identity和sequence之间切换
+     6assigned 放弃hibernate本地策略 每次插入数据的时候使用自己的方式插入主键 但是如果不给类写入主键那么会出问题
+     
+     
+     如果想要自己生成具有一定格式的主键,那么使用assigned策略,hibernate就不管主键了,需要我们在每次插入数据的时候设置主键值
+     如果是String 的而已使用uuid 其他有identity或者native即可
+     
+     
+     八hibernate的三种状态
+     1瞬时态对象 无唯一OID 没有被session管理
+     2持久态对象 有唯一OID 并且被session管理
+     3托管态  有唯一OID(相当于主键),没有被session管理
+     
+     如果使用save保存一个对象的话,那么更根据主键的生成方式,如果是increment identity  sequence native那么就不能设置主键值  
+     如果是assigned的话才能设置主键值 然后保存 ,如果设置了主键值可以用update去更新表中的值,前提是这个主键存在
+   
+     九持久态对象的特性(依赖了一级缓存)
+     1有自动更新的功能
+     	  当更改持久态对象的某个值,不需要使用update去更新,当对象更新的时候,会先改变一级缓存中的值,然后当事务提交时和快照对比
+	  如果不一致则改变数据库
+     
+     十
+     一级缓存
+     hibernate中存在两种缓存机制  一级和两级
+     一级缓存:session级别缓存  一级缓存生命周期与session是一致的 一级缓存(对应了一个一级缓存快照区)
+     
+     
+     
+     二级缓存是sessionFactory级别的缓存,需要配置的,一般用redis替代
+     序列化数据需要实现serializable接口 transient透明化
+     
+     4种隔离级别:
+     1read uncommitted
+     2read committed
+     3read repeatedable
+     4serializable
+     
+     hibernate中在核心配置文件中设置隔离级别
+     <property name="hibernate.connection.isolation">1 2 4 8</property>
+     
+     5线程绑定的session
+     事务一般限定在service层,因为service涉及到多个Dao的操作,那么如何确定多个Dao都是用的同一个session或者connection
+     为什么要保证是同一个session?
+     为了在当前线程中避免创建多个session,明明可以用一次连接完成dao的多个操作,没必要创建多个
+     其次多线程中只要保证session不是成员变量也可以保证多线程数据隔离的问题
+     
+     1threadlocal 线程绑定对象
+	在当前线程绑定session,在dao中调用线程中的session
+	hibernate内部已经已经绑定好了threadlocal 
+	sessionfactory提供了一个方法 getcurrentsession()可以获得线程绑定的session  但是默认不能使用
+	需要通过配置来使用,在核心文件中配置 
+	<property name="current_session_context_class">thread</...>
    
    
    
+    2向下传递 (DButils)
+     在业务层生成session 然后传递给dao层
    
    
+    十一:	 hibernate重要api
+    1query
+    query接口接收HQL字符串,进行复杂查询
+    String hql="";
+    Query query= session.createquery(hql);
+    sql分页是指在已经查询得到的结果的基础上在进步不分页筛选,并不能将所有数据分页
+    LIMUIT m,n 可以从m(从0开始)开始查询n条  具体的翻页条件是在其他程序中指定 
+    比如一次性查询出所有数据,然后根据页数来进行分页查询得到那一页的数据
+    
+   hql="from customer"    hql里是以对象为目标的,除此之外和sql很像
+   hql="from customer where name like ?"  这里这个?和那个preparestatement很像
+   通过query.set给?赋值
    
+   query.setfirstresult
+   query.setmaxresults
    
+   ⅡCriteria(QBC)
+   更加面向对象的查询
+   criteria criteria= session.creatrecreteria(customer.class)
+   list<customer> list = criteria.list()
+   这里是查询全部信息
+   如果要添加条件
+   使用criteria.add(restriction.like("name","王%")) 这里属性列都是用的类里面的变量名而不是表中的
    
+   最后的结果统一使用criteria.list(),不用add函数  查询的就是全部行
+   分页查询也和hql一致,需要注意的是分页查询第一条数据的下表是0
    
+   Ⅲ太复杂可以使用 sqlquery
    
-   
-   
-   
-   
-   
+  
    
    
    
