@@ -51,11 +51,11 @@ ORM:对象关系映射 将java中的类和数据库中的表对应起来
 	"http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 	<hibernate-configuration>
 	<session-factory>
-	<property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver.</property>
-	<property name="hibernate.connection.url">jdbc:mysql://localhost:3306/hibernate_</property>
+	<property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+	<property name="hibernate.connection.url">jdbc:mysql:///hibernate_?useSSL=false&amp;serverTimezone=GMT%2B8</property>
 	<property name="hibernate.connection.username">root</property>
 	<property name="hibernate.connection.password">root</property>
-	<property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+	<property name="hibernate.dialect">org.hibernate.dialect.MySQL5InnoDBDialect</property>
   <mapping resource="路径com/study/hibernate/Customer.hbm.xml"/>  这个mapping是引入我们建立好的映射 也就是hbm 路径用/分开 相对路径
   <property name="hibernate.show_sql"></property>   控制台显示sql语句
   <property name="hibernate.format_sql"></property>  格式化
@@ -156,7 +156,7 @@ ORM:对象关系映射 将java中的类和数据库中的表对应起来
 五 session (相当于连接) 非线程安全 
 非线程安全意味着对象不能当成员变量申明 只能局部变量
 session中的方法
-save  保存  将对象保存到表
+save(对象 比如 user)  保存  将对象保存到表
 查询 只能以主键为条件查询
 get(class c, serializable id);
 load(class c, serializable id)
@@ -170,7 +170,7 @@ get和load的区别?
   修改方法:
   1直接创建对象 然后修改
   是一种覆盖的方式
-  session.update();
+  session.update(object);
   2查询之后再修改
   先通过get得到customer  然后再该相应的属性  再更新
   
@@ -180,7 +180,7 @@ get和load的区别?
   2先查询再删除(推荐,可以做到级联删除)
   
   保存或删除方法
-   saveorupdate()
+   saveorupdate(object 对象)
   
   查询所有或者其他复杂查询
   用session.creatquery();  参数是hql查询语句  
@@ -309,6 +309,94 @@ get和load的区别?
    分页查询也和hql一致,需要注意的是分页查询第一条数据的下表是0
    
    Ⅲ太复杂可以使用 sqlquery
+   
+   十二:hibernate一对一关联映射
+   一对一映射一般两张表可以合成一张表的,或者使用唯一外键对应,让一方主键成为另一个表的外键,并且约束唯一
+   
+   十三
+   一对多映射(不是指一个表对应多个表,而是两个实体也就是两个表之间有1:n的关系):实质是两个表中行的映射关系
+   表1中的一行对应表二中的多行,一个实体1对应多个实体二
+   
+   一对多在数据库里面体现为在表二中创建属性外键
+   在ORM中,则表现为要在多方类中创建单方的类而不是单方类的属性
+   而在一方类中要创建一个set集合来存储多方类的多行数据
+   这里是双向的,当在也可以只做当上面的任一一种
+   
+   在hibernate的两个映射配置xml中  这个映射是分别将一方和多方映射到数据库表
+   多的那一方 配置  <many-to-one name="" class="" column=""></many-to-one>   name是一方的类属性名字 class是一方类的全路径 cloumn是多方中的外键
+   也就是将多方中创建的单方类对象和表中的外键建立映射 在类中外键是一个类  在表中是一个列 
+  
+  
+  一的那一方配置
+  <set name="linkMans">
+   <key column="lkm_cust_id"></key>
+   <one-to-many class="com.study.hibernate.LinkMan"/>
+   </set>在一的那一方中维护一对多关系
+   <set name>表示一的一方中创建的set集合名字
+   < key>子标签代表多方表中的外键名字
+   < on to many class>表示的是多方类的全路径名字
+   
+   一对多的级联操作:
+   级联是指操作一个对象的时候,是否操作其关联的对象,需要配置,在没有配置的时候我们只保存一边的类不能够级联保存另外一边,因为时态不一样,持久态和瞬时态
+   级联保存或更新:
+   操作一方的时候是否操作多方
+   需要在在一方的映射文件上配置 <set name="linkMans" cascade="save-update">  class标签新增了一个属性cascade 
+   操作多方的时候是否级联一方
+    <many-to-one name="" class="" column="" cascade="save-update"></many-to-one>   这个标签多了一个属性cascade
+    
+    当我们给某一方或者双方设置了级联之后,那么我们操作(保存插入删除)某一方的时候就会操作到它关联的对象
+    关联是指我们是否在java语句中设置了多方的外键(一方的类)或者一方的集合(多方类)
+    
+    级联保存=需要 是否设置了级联+是否有关联(关联=我们操作的那个类是否进行了外键操作,比多一方添加集合 多方添加单方的类,)
+    注意 反向的不算关联:比如customer1.getLinkMans().add(linkMan2);
+    这里是customer1关联了linkman2 我们保存costomer1会同时保存linkman2  但是我们保存linkman2不能操作customer1
+    
+    
+    级联删除:
+    默认情况下我们如果没有设置级联删除就删除一方的数据,那么多方中的对应的行的外键值会设置为null,然后删除一方
+    如果要设置级联删除  那么还是在一方 <set name="linkMans" cascade="save-update,delete">  用逗号隔开
+    一般级联删除只设置在一方的那一方,多方一般不这么干  要注意的是级联删除需要先查询再删除,不能直接创建主键一样的对象删除
+    这样虽然删了,但是这样创建的对象里面没有关联的信息,只能删除一方中的行
+    
+    
+    双向关联会导致多余的sql语句
+    单向维护 : 放弃一边的关联
+    双向维护:都关联,但是我们需要某一方放弃外键的维护权,一般是一的那一方放弃维护权
+    在<set>中配置inverse="true" 即可放弃外键的维护权
+    cascade与inverse并不矛盾 inverse负责管理外键维护权
+   
+   十四:hibernate中多对多的配置(如果是用两个一对多来配置的话需要设置三个类 而多对多只要两个类三个表)
+   Ⅰ多对多的实体配置需要在两个类中分别配置对方的set集合 private Set<User> users = new HashSet<User>();
+   Ⅱhbm.xml配置: 除了基本属性的映射之外  在class里面还要添加
+   <set name="users" table="sys_user_role"> 和一对多有点不同的是 这类table是填写的第三张表 中间表
+    <key column="user_id"></key>  key就是中间表中的外键
+    <many-to-many class="com.study.hibernate.user" column=user_id""></many-to-many> 这一个就是多对多 对方类的全路径以及对方类在中间表的外键
+    </set>
+    
+    从一对多的角度去看,这是很合理的,一方需要多方的一个集合名称 以及中间表名称 当插入时除了需要在各自的表插入信息,还需要在中间表插入
+    一对多中需要的是对方类在中间表的外键,比如当插入一行数据,那么和这一行关联的多行数据可以通过给出的中间表名称以及对方类的全路径
+    插入到对面的表中
+    
+    需要注意的是 当多对多双向操作的时候,必须有一方要放弃对外键的维护权,因为双方都会发送sql语句去维护外键
+    那么就会中间表外主键重复出错,一般让被动方放弃对外键的维护权
+    
+    要注意的是可以单向操作,但是一定要记住需要级联 cascade,否则的话要保存所有对象需要双向操作,不管是一对多
+    还是多对多 如果想要保存双方,在没有级联的情况下必须双向操作(双向操作必须有一方放弃外键维护全)
+   但明显 单向操作+级联可以不设置inverse
+   
+   
+   十五:重要理解
+   Role role2=session.get(Role.class,2L)
+   User user=session.get(User.class,2L)
+   假如user的roleset里面有二号角色
+   user.getRoles()得到的对象列表中的二号角色对象 与直接通过session.get得到role2是否是同一对象?
+   一般来说在java中不是同一对象
+   但在hibernate的一级缓存中,如果两个对象的OID相同,则它们在hibernate的一级缓存中属于同一对象,也就是当我们
+   通过hibernate方法 比如Role role2=session.get(Role.class,2L)得到对象时,它会判断是否是某个已经存在于一级缓存的对象
+   如果存在则就将它指向已存在的对象,如果不存在则创建
+   
+   那么就可以通过set的remove()方法移除某个指定外键 可以通过add添加某个外键
+   
    
   
    
