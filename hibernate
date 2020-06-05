@@ -320,7 +320,7 @@ get和load的区别?
    一对多在数据库里面体现为在表二中创建属性外键
    在ORM中,则表现为要在多方类中创建单方的类而不是单方类的属性
    而在一方类中要创建一个set集合来存储多方类的多行数据
-   这里是双向的,当在也可以只做当上面的任一一种
+   这里是双向的,当在也可以只做当上面的任一一种,不建立外键映射的一方没有对外键的维护权
    
    在hibernate的两个映射配置xml中  这个映射是分别将一方和多方映射到数据库表
    多的那一方 配置  <many-to-one name="" class="" column=""></many-to-one>   name是一方的类属性名字 class是一方类的全路径 cloumn是多方中的外键
@@ -369,7 +369,7 @@ get和load的区别?
    Ⅰ多对多的实体配置需要在两个类中分别配置对方的set集合 private Set<User> users = new HashSet<User>();
    Ⅱhbm.xml配置: 除了基本属性的映射之外  在class里面还要添加
    <set name="users" table="sys_user_role"> 和一对多有点不同的是 这类table是填写的第三张表 中间表
-    <key column="user_id"></key>  key就是中间表中的外键
+    <key column="user_id"></key>  key就是对方类在中间表的外键
     <many-to-many class="com.study.hibernate.user" column=user_id""></many-to-many> 这一个就是多对多 对方类的全路径以及对方类在中间表的外键
     </set>
     
@@ -397,13 +397,207 @@ get和load的区别?
    
    那么就可以通过set的remove()方法移除某个指定外键 可以通过add添加某个外键
    
+   如果没有设置级联操作的话,那么需要双向操作,然后双向保存,需要注意的是session.save或者一切session的操作是先将东西
+   保存到hibernate的一级缓存中,当我们提交事务,然后会将一级缓存和快照对比,然后更改数据库.而我们需要注意的是在flush之前
+   需要保存瞬时态的对象,也就是在没有级联的情况下,需要双向保存,单向保存,另外一边必然是瞬时态的。
    
+   
+   十六hibernate的查询方式
+   1OID查询
+   就是通过主键检索  比如get load
+   
+   2对象导航检索
+   hibernate根据一个已经查询的对象,获得其关联的对象	
+   
+   3HQL检索
+   hibernate中面向对象的查询语言 通过session.createquery("hql语言")或者query对象
+   HQL和sql很想 只不过将表名和列名换成了类名和属性名 就说说我查询类就相当于查表
+   
+   排序查询:
+   session.createQuery("from User order by .... desc asc");降序或者升序
+   
+   条件查询
+   按位置绑定
+   Query q= session.createQuery("from User where user_name=?")
+   q.setparameter(0,"");用setparameter来设置条件参数 第一个问号的编号是0
+   并列条件用and 连接 
+   结果用query.list()获得  
+   按名称绑定
+   Query q= session.createQuery("from User where user_name= :a and user_name like :b")  这里:任意字符  不能有空格
+    query.setparameter("a",.....);
+    query.setparameter("b",.....);
+   
+   投影查询
+   单个属性返回object的list
+   List<object> lists= session.createQuery("select u.user_name from User u ").list();
+   多个属性
+     List<object[]> lists= session.createQuery("select u.user_name,u.user_id  from User u ").list();
+     
+     for(object[] objects:lists){
+}
+
+   或者在customer中添加有参构造方法 需要哪些属性就添加那些参数  
+   public User(user_name,User_id){
+   	this....
+	this...
+   }
+   查询的时候如下方式,就会查询user_name,User_id然后封装进一个customer对象然后返回所有的customer列表
+   ListCustomer> lists= session.createQuery("select new Customer(user_name,User_id) from Customer").list();
+    
+    分页查询:
+    Query query=session.createquery("from cuptmer");
+    query.setFiertResult(); 设置从那一条开始
+    query.setMaxresult(); 设置查询多少条
+    
+    分组统计查询:
+    query常用list()方法和uniqueResult()来获得结果 如果结果唯一可以使用第二个
+    聚合函数直接像sql里那样使用即可 count() max min()
+    使用group by ....having ...方式也和sql基本一致
+    有条件的地方 实际数据要用? 然后通过set来设置..
+   
+   java Arrays类可以对数组就行操作,因为数组变量不是类 java提供对数组操作的类Arrays
+ 
+ 4QUBC检索
+   Criteria criteria= session.createCriteria(customer.class);这里传入的是想要查询的表对应的类字节码对象
+   criteria.list();获得查询结果  默认没有条件查询表所有信息
   
+  升序查询
+   criteria.addOrder(order.desc("排序字段  类中的);
+   criteria.addOrder(order.asc("排序字段  类中的);
+   
+   分页查询:
+   criteria.setFirstresult();
+    criteria.setmaxresult();  和hql的方法一致
+    
+    条件查询:
+    通过add函数
+    criteria.add(Restrictions.eq("",)) 第一个参数是类的属性 第二个是值
+    add函数需要传入一个Retrictions类对象(条件对象)
+    通过Retrictions的静态方法赋予条件
+    eq =
+    gt >
+    ge >=
+    lt <
+    le <=
+     <>
+    like 模糊查询
+    in 
+    and 
+    or
+    如果有多个条件的话可以多次调用add添加条件,
+    如果是or的话还是使用Restrictions.or()只不过在or里面还要传入一个restrictions对象
+    Restrictions.or(Restrictions.eq(.....))
+    
+    聚合函数,分组查询
+    criteria中使用setprojection来使用聚合函数以及分组
+    setprojection(projection.count)
+    projection.count()
+    projection.groupproperty()
+    projection.max()
+    
+    在criteria中使用add 添加普通条件
+                 使用addorder排序
+		 使用setprojection()来添加分组和聚合函数信息
+			 
+    离线条件查询
+    Detachedcriteria
+    脱离session使用,好处就是不需要在dao中去拼接参数或者从传递多个参数到service或者dao层
+    DetachedCriteria dc = DetachedCriteria.forclass(Customer.class)
+    这里是需要查询的类的字节码对象
+    然后就可以给这个dc对象条件,最后传递这个dc到service或dao层
+    在dao层中将dc绑定到session,因为必须要有session才能和数据库交互
+    criteria c = dc.getexcutableCriteria(session);
+   
+   5HQL多表查询检索
+   内连接:
+   	 隐式内连接
+	 显示内连接 有inner join语句 a join b on a...=b....
+   外连接:
+   左外连接 left outer join
+   右外连接 right outer join  写法和隐式内连接一致
+   
+   HQL中的多表查询:
+   隐式内连接:
+   List<object[]> lists=session.createquery("from customer c inner join c.linkmans");
+   这里省略了on之后的条件,因为使用c.linkmans得到了所有的关联对象  这种方式不需要写条件了
+   
+   为了不是返回对象数组的list
+   迫切内连接:就是在inner join后面添加一个关键字fetch fetch 通知hibernate将查询所得另一个对象的数据封装到第一个对象的set集合里面
+   比如Customer 和linkmans 一对多 一个顾客对应多个联系人 当我们迫切连接查询 会将查询得到的多个外键相同的联系人封装到一个Custoermer对象的set集合中
+   最后得到customer的list
+   
+   将所有外键相同的多方封装到单方对象中,由于对于每个查询得到的行数据都会进行一次封装,因此会得到重复的数据,需要加上distinct 取消重复的数据
+   重复是我们查询会得到一个顾客 不同联系人的多行数据  封装会对每行都进行 将所有联系人封装到每行然后形成一个对象 这样就会重复 
    
    
    
+   迫切连接可以通过hibernate配置
    
    
+   6sql查询
+   Entity 实体
+   使用sql查询基本方式和hql一样,只不过用的是表名和列名,得到的list是对象数据的列表
+   要想返回的是一个对象
+   需要使用方法 sqlquery.addEntity(Customer.class);
+   
+   7hibernate优化策略
+   1lazy加载  在查询的时候不会真正查询  得到的一个代理对象
+   当我们使用这个查询所得对象时才真正去查询
+   
+   类级别的延迟加载可以在映射文件的<class>标签设置lazy属性
+   1设置为false可以使延迟加载(load函数)失效
+   2持久化类用final修饰
+   3设置lazy属性
+   
+   关联级别的延迟加载指在查询到某个对象时,查询其关联对象的时候是否采用延迟加载		
+   关联级别的延迟加载可以在映射文件的set标签或者<many to one>这种标签设置lazy属性
    
    
+   8抓取策略
+    通过一个对象抓取到它的关联对象也需要发送SQL,只不过不需要我们手动去设置,而sql如何发送,发送什么格式需要通过
+    策略配置
+    通过<set>标签或者<many to one>进行配置 fetch属性
+    fetch  和lazy 如何配置怎么使得sql语句最优
+    
+    <set>上的fetch和lazy属性
+    
+    fetch:抓取策略,控制sql语句格式
+      值有
+      select  发送普通select语句  默认值
+       join 发送一条迫切左外连接查询关联对象  这种形式下lazy失效了 因为迫切连接会查询某个对象的关联对象并封装
+       subselect 发送一条子查询查询其关联对象
+      
+      lazy:控制延迟加载,控制查询关联对象的时候是否延迟加载
+      
+      值有 true  采用延迟  默认值
+           false   不采用延迟加载的方式
+	   extra   极其懒惰加载
+    
+    fetch控制 查询对象时,猜什么样的方式抓取它的关联对象
+    lazy控制关联对象的抓取时机,是否延迟加载(类级别的lazy加载在映射文件的class标签设置  关联级别的lazy在set上面设置)
+    
+    
+    <many to one>上面lazy和fetch的值设置
+    fetch: select
+    	  join
+    lazy:proxy  默认 相当于true 但是有点区别  当一方的set上面lazy时true时 proxy就是true 当一方的set上lay时false时 proxy就是false
+         false
+	 
+	 
+	 
+  9批量抓取
+   当我们使用lazy加载时不仅是在对象使用时才发送sql  而且hibernate也只查询当前对象所关联的对象,如果我们循环去获得每个对象的关联对象
+   那么就会发很多次sql语句 
+   所以可以在set 上面设置batch-size属性设置每次抓取的大小 也就是每次向数据库查询(batch-size个)对象的关联对象数据,然后存入一级缓存
+   这样后面的再去查询就不用发送sql语句了
+   
+   一对多 一方的set设置batch-size 
+   而多方的many to one标签没有这个属性 多方要设置批量抓取则要在一放的class标签设置batch-size
+    
+    
+    
+    
+    
+    
+    
    
