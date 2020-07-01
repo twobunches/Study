@@ -7,4 +7,274 @@ schema:SPring XML文档的相关约束
 Ⅰ IOC的四个核心容器:beans  context core  SPEL(expression)
 Ⅱ spring开发也需要日志的jar包 log4j  以及commons.logs jar包 
 Ⅲcommons.logs这个jar里面都是一些日志接口  具体的实现可以是log4j也可以是jdk自带的日志实现
-Ⅳ使用log4j需要再classpath目录下配置log4j属性文件
+Ⅳ使用log4j需要再classpath目录下配置log4j属性文件以及引入log4j的jar包
+
+3Spring解决了什么
+  Spring使得类和类之间的耦合变低,通过IOC使得底层的实现不改变上层的代码 
+  通过工厂+反射+xml配置 将类的管理权限(生成类的权力)交给SPring的beans容器  (factory)
+  
+  在src目录下创建applicationContext.xml(beans.xml) 文件  引入schema约束  
+  约束规范可以在Spring压缩包下C:\Users\MECHREVO\Desktop\API\spring-framework-4.2.4.RELEASE\docs\spring-framework-reference\html\xsd...下去复制
+  
+  The beans schema
+  <?xml version="1.0" encoding="UTF-8"?>
+  <beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="foo" class="x.y.Foo">
+        <meta key="cacheName" value="foo"/>
+        <property name="name" value="Rick"/>
+    </bean>  这里的bean就是我们委托给spring管理的类
+
+</beans>
+
+   Spring通过bean创建类实例的流程:
+   applicationContext ac= new classpathxmlapplicationContext("" beans xml文件的位置); 由于放在src下  所以直接是xml的文件名
+   object x=  ac.getBean(id);通过xml中相应bean的id去找到这个类 然后通过反射获得实例
+   
+   因此当我们需要改变底层的类的时候只需要去xml中改变相应配置即可 而不需要改动代码 也就实现了底层的改变不影响上层 实现了控制反转
+ 
+4Spring的DI
+  DI依赖注入  spring可以将实现类中所依赖的属性注入进来 可以通过接口来获得这个属性值
+  
+ 一般来说 面向接口变成 我们使用接口有一个问题,那就是不能使用实现类中特有的方法和属性 
+ 但是通过DI将类交给spring管理后,就算我们使用接口编程,也能使用实现类中特有的属性(独特的成员变量)
+ <property name="name" value="Rick"/>  通过在beans中的bean标签中设置property标签即可
+ 
+ 这个标签中的name的值要和实现类中的成员变量命一一对应
+ 
+ 5Spring的工厂类(接口)
+ Beanfactory (旧)
+ applicationContext(新的)  有两个实现类
+ classpathxmlapplicationContext  加载在类路径下的beans.xml
+ filesystemxmlapplicatoncontext  加载在磁盘上的beans.xml
+ 
+ 
+ 5 Spring的xml提示问题
+  在hibernate中我们使用的外部dtd文件引入或者 在线的联网的dtd形式约束
+  一个xml只能被一个dtd约束
+  
+  在spring中使用xsd 也就是xml schame  一个xml可以被多个schema约束
+  外部引入schema的话 还是去找相应xml的约束 然后eclipse的引用中搜索xml catlog
+  然后引入外部约束 下面的网址填写相对应的地址 (比如上面xml中的xsi:schemaLocation的地址 这个是在线地址)
+  当没有联网时,在线地址不可用,则会使用相应的外部文件
+  
+  6<bean>标签管理类 
+    属性 id 和name的区别  这里都是对类的名字进行标志  id不允许重复 并且不能有特殊字符
+                                                     name允许重复 但是实际开发也不允许 但是可以有特殊字符
+     
+    init-method属性 可以设置初始化方法
+    destroy-method属性可以设置bean的销毁方法  当我们在xml中配置了这两个属性
+    那么就可以在对应的类中编写相应的方法  当bean被创建的时候会去自动调用初始化方法
+    当beans工厂关闭的时候会销毁bean 通过applicationContext.close()关闭工厂
+    
+    
+    7 bean 的作用范围的配置(scope属性)
+    singleton:默认的  spring的单例模式 无论创建多少次bean都是同一个对象
+    prototype:多例模式
+    request:应用在web中,当spring创建这个类实例后会将它存入request范围中
+    session:应用在web中,.....................,存入session中
+    globalsession:应用在web项目中,在porlet环境中使用,这种环境是指比如我们登录一个公司的某个产品比如百度网盘,那么我们登录其他的产品的时候免登录,这种情况
+    
+    
+  8Spring中的属性注入方式 DI   怎么给bean 的属性赋值 因为我们只能同构getbean得到实例,那么bean中的局部变量值怎么设置呢?
+  
+    Ⅰ通过构造方法 在bean的类中提供一个构造方法
+      bean交给spring管理 并且设置子标签<constructor-arg name=""  value="">
+      通过这个标签可以给构造器参数赋值 spring调用构造器生成实例的时候会给相应属性赋值
+    
+     Ⅱ通过set方法  在bean的类中设置一个set方法
+     bean交给spring管理 并且设置子标签<propery name="" value="">
+     
+     
+     注意如果局部变量是一个对象 那么不能用value在设置值了,应该用ref属性 <propery name="" ref="">
+     ref="某个bean 的id"  spring通过beanid获得类实例然后赋值给局部变量 ref引用某个bean 的id获得实例
+     
+     Ⅲ接口注入(spring不支持)  接口注入是指让类来实现一个可以提供属性设置抽象方法的接口
+     
+     Ⅳp名称空间的属性注入
+      通过引入P名称空间的方式来进行属性注入
+      怎么引入?
+      xmlns:p="http://www.springframework.org/schema/p "  引入这个名称空间  放在beans标签中
+      
+      写法:
+     普通属性注入  P:属性名="value"
+     对象类型注入  P:属性名-ref="value"
+     <bean id="employed" class="xxx" p:name=xxx  p:xxx=... 或者p:xxx-ref=xxx>
+     这里的属性名就是类中的私用局部变量名字 也是set方法的参数名字
+     需要注意的是P名称空间引入这种方法只适用于beans中有set方法的属性注入  如果是构造方法类型的则不行
+     
+     Ⅵspel方式的属性注入
+     同样是对set方式属性注入的一种扩展  在我们写value="xxx" 这里可以写spel表达式  #{xxx}
+     name="" value="#{'张三'}"  字符串
+     name="" value="#{2000}"   整型
+     name="price" value="#{car1.price}"  对象属性(私有变量可以直接引用 ,仅限于spel中)
+     name="price" value="#{car1}"   对象值 这里是bean 的id
+    注意: 在spel中 通过类id.属性名 可以获得私用的局部变量  但其实调用的是get方法得到的这个属性值
+     比如car.prices 其实调用的是car.getprice(); 因此需要保证bean对应的类中有get方法
+     
+     
+     Ⅶ复杂类型的属性注入 数组或者list集合 
+     <bean id="" class=""  >
+     <property name="arr">
+     <list>
+      <value></value>  如果数组或list里面存的是对象  那么  使用<ref>标签
+     </list>
+     </property>
+     </bean>
+     
+     如果是set集合
+       <bean id="" class=""  >
+     <property name="arr">
+     <set>
+      <value></value>  如果数组或list里面存的是对象  那么  使用<ref>标签
+     </set>
+     </property>
+     </bean>
+     
+     如果是map类型
+       <bean id="" class=""  >
+     <property name="arr">
+     <map>
+      <entry key="" value(或者value-ref)="">  </entry>  如果数组或list里面存的是对象  那么  使用<ref>标签
+       <entry>  </entry>
+        <entry>  </entry>
+     </map>
+     </property>
+     </bean>
+     
+     
+     
+     7Spring分模块开发
+       在引入beans配置文件的时候可以使用 classpathxmlapplicationContext()可以引入多个beans文件
+       
+     8属性注入的用法
+     本意使用来注入类中一些局部变量
+     
+      但是我们在一个类中要使用另一个类, 简单明了的方法是将这个类交给Spring管理 然后通过applicationContext来获得对象
+      还有就是通过属性注入,在这个类中设置我们要使用的类的接口局部变量,然后通过属性注入,使得主类能够获得这个类得对象
+      并且可以通过xml配置随时改变这个类 而主类只管使用这个对象 而不必管这个类怎么改变
+     
+     
+     
+     
+     
+     9关于工厂类的创建
+     由于每次访问web项目都会创建一次工厂,这极大的浪费了资源,因此需要在服务器启动的时候创建一个工厂类 然后存放进唯一的对象 servletcontext对象
+     servletContext对象是web项目中唯一对象,所有serlvet http都只能访问同一个
+     
+     所以带来了一个解决方案
+     引入spring-webjar包
+     在web-xml中配置Spring 的核心监听器  这个监听器的作用是当项目在服务器上启动的时候 读取bean配置文件 创建唯一的工厂applicationContext存入setvletContext中
+     
+     <listener>
+  	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+     </listener>    监听器是ContextLoaderListner的全路径名字
+  
+    <context-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>classpath:applicationContext.xml</param-value>
+    </context-param>   这里是指定beanxml的路径   前缀classpath指的是类路径 src下的相对路径
+
+     然后通过WebApplicationContextUtils.getWebApplicationContext(this.getServletContext()); 获取唯一的工厂对象(beans工厂) 
+     
+     
+     
+     10Spring IOC的注解开发
+      第一步  引入相应的jar包 需要多一个AOP的包
+       
+       第二步  引入Spring的核心配置文件 就是beans.xml  
+       引入约束  使用注解开发需要context schema (context里包括了beans的约束)
+       
+       第三步
+        使用IOC的注解开发需要在beansxml中配置一个组件扫描 (哪些包下的类要使用注解开发) 所以这个xml并不是用来配置bean的
+      <context:component-scan base-package= " 包名">  配置包名
+      
+      第四步 
+       在类上添加注解@Component(value="") 这里相当于将这个类托管给Spring的IOC容器 相当于<bean>中的操作
+       然后其他和非注解方式类似  通过加载beans.xml获得工厂对象  然后通过工厂获得实例
+       
+       这里value=""是给beans设置id
+       
+       11注解方式怎么设置属性注入呢?
+       
+       注解方式设置属性值可以没有set方法
+       
+       如果属性有set方法,那么需要将属性注入的注解添加到set方法
+       如果属性没有set方法,那么需要将属性注入的注解添加到属性上
+       
+       这个注解是@value("值")
+       比如  
+       
+      @value("龙哥")
+      private String name;
+     
+      12SpringIOC中的注解
+      
+      Ⅰ@Component :组件
+      
+        修饰一个类,将这个类交给SpringIOC容器管理
+        三个衍生注解:
+             1@Controller  修饰web类
+             2@service     修饰service类
+             3@Respository   修饰Dao类
+     
+       Ⅱ属性注入注解
+         普通属性:
+              @value("")
+         对象类型:
+              @autowired  没有参数  按照对象类型直接注入
+              
+              @autowired
+              private UserDao userDao; 
+              也就是说只要是userDao的实现类的SPring都可以将他们的实例注入到这个引用  这样就不能按照名称注入 ,因为有些时候我们希望能够注入指定的Beans
+              
+              所以
+                @autowired
+                @Qualifier(value="对象的名称id")
+                
+                这两个合着一起用,强制注入指定名称的类实例
+            @Resource(name="名称id "):可以完成对象类型的属性注入
+         
+         Ⅲbeans中方法上的注解  
+           当beans初始化的时候执行的方法注解
+           
+           @PostConstruct
+           加载beans类中的某个方法上,当beans被创建的时候 执行该方法
+           @prDestroy
+           加载beans类中的某个方法上,当beans被销毁的时候 执行该方法
+           
+           Ⅳbean作用范围的注解  加在类上
+           @scope  默认值为singleton    无论用getbean多少次得到的始终是同一个对象
+           @scope("prototype")        多例 beans被创建时会创建不同的对象
+                
+      
+     
+       <context:Component-scan>这个标签是用来扫描类上的注解 如果没有@component注解那么可以不需要这个标签
+       但是如果使用了属性上的注解 那么需要添加<context:annotation-config/>标签
+     
+     
+     
+     11Spring的AOP开发  aspect oriented programming
+      面向切面编程   oop面向对象  
+     
+       AOP底层就是动态代理,相当于将所有模块的共性抽取出来开,然后我们需要使用这个功能就
+       使用AOP动态代理增强我们当前的模块,不需要使用就不使用动态代理
+     
+       Spring底层动态代理实现了两种:
+       JDK动态代理   只能对实现了接口的类产生代理
+       Cglib动态代理  可以对没有实现接口的类产生代理,其实就是生成子类对象,所以不要使用fianl修饰
+        
+        我们不需要自己创建代理对象,只需要在Spring中进行配置 
+       
+       
+     
+     
+     
+     
+     
+     
+
+
