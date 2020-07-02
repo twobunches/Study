@@ -89,7 +89,7 @@ schema:SPring XML文档的相关约束
      bean交给spring管理 并且设置子标签<propery name="" value="">
      
      
-     注意如果局部变量是一个对象 那么不能用value在设置值了,应该用ref属性 <propery name="" ref="">
+     注意如果局部变量是一个对象 那么不能用value在设置值了,应该用ref属性 <propery name="" ref="">  
      ref="某个bean 的id"  spring通过beanid获得类实例然后赋值给局部变量 ref引用某个bean 的id获得实例
      
      Ⅲ接口注入(spring不支持)  接口注入是指让类来实现一个可以提供属性设置抽象方法的接口
@@ -257,7 +257,7 @@ schema:SPring XML文档的相关约束
      
      
      
-     11Spring的AOP开发  aspect oriented programming
+     11AOP原理  Aspect oriented programming
       面向切面编程   oop面向对象  
      
        AOP底层就是动态代理,相当于将所有模块的共性抽取出来开,然后我们需要使用这个功能就
@@ -265,16 +265,347 @@ schema:SPring XML文档的相关约束
      
        Spring底层动态代理实现了两种:
        JDK动态代理   只能对实现了接口的类产生代理
+       proxy.newproxyInstance()
+       
        Cglib动态代理  可以对没有实现接口的类产生代理,其实就是生成子类对象,所以不要使用fianl修饰
-        
+        Enhancer enhancer = new enhancer();
+        enhancer.setSuperClass(我们要代理的对象); 设置父类
+        enhancer.setCallbank(Methodinterceptor);设置回调函数  类似于invocationhandeler  要去实现一个methodinterceptor接口  然后传入这个实现类对象
+        enhancer.create();产生代理对象
         我们不需要自己创建代理对象,只需要在Spring中进行配置 
        
+        区别   jdk产生的代理对象proxy可以看成是接口,里面只有方法规范没有具体定义, 具体的操作没有
+               cglib产生的代理对象是一个子类  里面什么包括父类的一切 有方法具体的定义 
+               
+               
+     12Spring的AOP开发
+     
+     AspectJ(aop框架)
+     
+     joinpoint:连接点  可以被拦截到的点
+     Pointcut:切入点,真正被拦截到的点(可以是一个或多个方法)
+     advice:通知,增强,用来增加切入点的方法
+     target:被增强的对象
+     weaving:将通知应用到target的过程 
+     
+     aop是一个动态的过程,对需要增强的对象方法才增强,不需要增强则不管它
+     
+     第一步
+     需要引入AOP相关的包以及aspectJ的包
+     在Spring核心包的基础上  需要引入AOPalliance(统一的规范)  第三方ASpectj包  Spring自带的整合aspect包 以及aop包(Spring自身对于aop的实现 相当麻烦)
+     
+     第二步 引入Spring核心配置文件的约束  AOP约束  前面学过要用注解需要引入context约束  (schema约束文件时xsd后缀)
+     可以在配置文件中配置多种约束  注意:没有网的话需要引入外部schame文件  在xml catlog中
+     
+     第三步:
+     创建切面类(包含通知方法advice  就是增强用的方法) 增强切入点  
+     配置切面类: 交给spring管理(切面类需要进行beans配置或者@Component注解 添加context-scan扫描)     定义了一个切面类之后需要: 配置为beans(交给spring)+配置为aspect切面
+     通过AOP配置完成对目标类(被增强的类)产生代理 应该说是对类中方法的增强  对类产生代理 然后增强里面的特定方法
+     <aop:config>
+     <aop:pointcut expression="excution(*报名.类名.方法名(..))"  id="切入点的id"/>  这里确定了要增强的方法    ..代表任意参数  *代表任意返回值
+          这个expression是切入点表达式  表示这个切入点要具体到那些方法上
+     <aop:aspect ref="...切面类的id">  这个标签要在pointcut后面
+        <aop:before method="切面类里的某个方法名字 " pointcut-ref="切入点的id">   这里的before是指前置增强 当然也有after后置增强 
+     </aop:aspect>
+     </aop:config>
+     
+     14SSpringAOP中通知类型 通知就是用以增强的方法
+      1前置通知  <aop:before method>  在目标方法执行之前通知
+          任意通知都可以获得切入点信息,只需要在通知(增强方法)中添加参数,JoinPoint joinpoint  这个类是aspectj提供的类
+          用以在增强方法中获得切入点的具体信息 直接用即可 Spring底层会将具体对象传入增强方法中 前提是该参数类型和名字不能写错
+      
+      2后置通知  <aop:afer-retuening> 再被增强方法执行之后通知
+       后置通知可以获得被增强方法的返回值 通过设置一个通知的参数object xxx  参数的名字必须和配置中一致参能得到返回值
+       <aop:after-returning method="" pointcut-ref="" returning="xxx"> returning指定接收返回值的参数名字
        
+      3环绕通知  在目标执行之前和之后进行操作
+        环绕通知可以阻止目标方法的执行
+        <aop:around method=..>  
+        环绕通知和前置后置不一样在于,环绕通知需要我们自己在通知中执行切入点方法 ,通过参数Proceedjoinpoint joinpoint
+          通过方法joinPoint.proceed()来执行切入点方法,如果没有这个则会阻塞
+      其次 前置通知后后置通知则有Spring帮忙执行一次切入点方法    
+          环绕通知
+          public object around(ProceedJoinPoint joinpoint){
+             环绕前通知....
+             Object obj= joinPoint.proceed()
+             环绕后通知.....
+             return obj;
+          }
+          
+          
+        
+        
+      4异常抛出通知:在程序出现异常的时候经行通知
+     <aop:-throw method="" pointcut-re"" throw="" 配置获取获取异常的通知参数>  
+     
+     ******************
+     AOP切入点表达式语法:
+     语法:[访问修饰符] 方法返回值 包名.类名.方法名(参数)
+     expression=excution()
+     public void com.study.customer.save(..)  ..表示参数不限
+     * com.void com.study.customer.save(..)   *表示返回值也不限制
+     * *.*.*Dao.save()表示所有类下的Dao类下的save方法都能被增强
      
      
      
+     13Spring整合junit4单元测试
+     通常我们在测试Spring的beans类的时候,需要@test 并且创建工厂类获得beans来测试
+     由于我们的测试类不被Spring管理,因此不能注入beans类测试
+     所以SPring提供了test.jar包 整合junit
+     
+     在测试类上添加注解@Runwith(SoringJunit4ClassRunner.class) 这个注解表明该类在单元测试类中的运行期中运行
+       @ContextConfiguration("classpath:beansxml路径")  这一注解用于加载Spring的配置文件,因此不需要创建工厂类来加载xml了
+       我们要使用beans的类只需要进行属性注入即可,由于注解的存在 不需要将测试类加入Spring管理
+       也可以理解为这个注解使得该类被Spring管理
+       
+       注意 在Spring中用注解属性注入一个类的前提是该类Spring管理,获得添加了@Component注解
+       
+      比如
+      
+      @Runwith(Springhunit4classrunner.class)
+      @ContextConfiguration("classpath:applicationcontext.xml")
+      public class SpringDemo{
+        @Resource(name="userDao")
+        private UserDao userDao;
+       
+        @Test
+        public void demo1(){
+          可以直接使用userdao 而不需要每个方法都建工厂去得到这个bean
+        }
+      
+      
+      }
+     
+      使用Spring整合junit需要test.jar包
      
      
+     14AOP的注解开发
+      **********************************************************************************
+     使用注解开发需要在spring配置文件中开启aop注释自动代理。如：<aop:aspectj-autoproxy/>
      
+     spring中Aop的注解
+     @Pointcut注释声明一个切点目的是为了告诉切面，谁是它的服务对象。（此注释修饰的方法的方法体为空，不需要写功能比如 public void say(){};
+     就可以了，方法名可以被候命的具体服务功能所引用，它可以被理解为切点对象的一个代理对象方法）
+    
 
+     注解方式声明Aop
+        1.用@Aspect注解将类声明为切面(如果用@Component("")注解注释为一个bean对象，那么就要在spring配置文件中开启注解扫描，<context:component-scan base-package="com.cjh.aop2"/>
+        否则要在spring配置文件中声明一个bean对象)
+　       定义切点@Pointcut("execution(* *.saying(..))")
+                 parivate void sayings(){}  这个方法没有实际意义 方法名sayings()相当于id  真实的切入点在注解中的value给出
+       2.在切面需要实现相应方法的前面加上相应的注释，也就是通知类型。 
+       前置通知(注解中的sayings()方法，其实就是上面定义pointcut切点注解所修饰的方法名，那只是个代理对象,不需要写具体相当于xml声明切面的id名，如下，相当于id="embark",用于供其他通知类型引用)
+     3.此处有环绕通知，环绕通知方法一定要有ProceedingJoinPoint类型的参数传入，然后执行对应的proceed()方法，环绕才能实现。
+　     前置通知
+      @Before("sayings()")    或者直接@Before(value="execution()") 而不使用pointcut注解
+      后置通知
+　    @AfterReturning(value="sayings()",retuening="result")  在注解中可以设置后置通知得到被增强方法返回值的参数
+     在通知中设置参数 object result  名字要对应
+     
+     环绕通知 注意要有ProceedingJoinPoint参数传入。
+      @Around("sayings()")
+     
+      @after最终通知
+      
+      @afterThrowing(value="execution()",throwing="e")  在通知中添加参数 Throwable e  可以获得被增强方法中的异常信息 名字要对应
+     
+     
+  15Spring的JDBC模板
+  Spring的ORM模块用于整合hibernate或者Spring Date JPA
+  
+  jdbc模板就是对jdbc的一个封装
+  jar包-Spring基础jar包 aop开发包 数据库驱动( 使用注解需要Context aop 的schema规范 )、Spring的tx和 jdbc.jar包 c3p0的连接池jar包
+  
+  如何使用jdbc模板:(类似于DButils的用法)
+  JdbcTemplate jdbcTemplate = new JdbcTemplate(datesource);
+  
+  这里可以使用c3p0连接池 也可以使用Spring自带的一个连接池类  DrivermangerDataSource 类创建连接池
+  DrivermangerDataSource  dataSource=new  DrivermangerDataSource();
+  然后可以使用 datesource.setDriverclassName设置 数据库驱动类型 
+               datasource.seturl设置连接的数据库
+               datasource.setusernanme()
+               datasource.setpassword()
+  janctemplate.update()  这里增删改类似于DButils 而查询不一样
+  
+  
+  将jdbctemplete类和连接池类交给Spring管理 这样可以保证连接池只创建一次 单例创建
+   <bean id="dataSource" class="org.springFramework.jdbc.datasource.DriverManagerDataSource"></bean>
+   由于这个类不是我们的,所以不能使用用注解来变成beans 由于这个类有set方法,所以可以通过<property>标签进行属性注入
+  同样的jbctemple也交给spring管理,然后使用属性注入,将连接池对象注入给jdbctemple
 
+  记住 只要有set方法的类都可以交给Spring管理,然后使用属性注入,使用Spring来获得对象
+   <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+    <property name="driverClassName" value="com.msql.jdbc.Driver"></property>
+     <property name="url" value="jdbc:mysql://localhost/spring"></property>
+      <property name="userName" value="root"></property>
+       <property name="password" value="root"></property>
+    </bean>
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+    <property name="dataSource" ref="dataSource"></property>
+  
+  
+     15.2不使用DriverManagerdatasource 使用开源的数据库连接池 c3p0和DBCP
+         Ⅰ使用DBCP 引入连个jar包  1dbcp 2pool
+             配置dbcp和sring自带的数据库连接池一致 导包 然后将连接池对象给Spring管理,dbcp连接池中的属性和spring自带的一模一样
+             dbcp的连接池类 BasicDatasource类
+             
+          Ⅱ使用c3p0连接池  c3p0的核心类叫 combpooldatasource
+            其他类似 c3p0中的属性名不太一样
+            驱动属性名 -driverClass (driverClassName )
+            地址   jdbcUrl  (url)
+            用户名  user (username)
+            密码  password
+           
+        15.2使用属性文件配置数据库的相关值  
+           可以在spring核心xml里面引入属性文件
+           第一种方式
+            <bean class="peoperplaceholderCOnfigure类路径">   托管的这个类不用id,因为这是spring自己监测的 我们也不使用
+            <peoperty  name="location" value="classpath:属性文件"></peroperty>
+            </bean>
+            
+           第二种方式:
+            通过context标签 
+            <context:property0palceholder location="xxxx"/>
+            <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+           <property name="driverClassName" value="${变量名}"></property>
+           <property name="url" value="${变量名}"></property>
+           <property name="userName" value="${变量名}"></property>
+           <property name="password" value="${变量名}"></property>
+            </bean>
+           
+           由于我们引入了属性文件,所以value就不应该写死 通过value="${变量名}"这种方式获得Spring读取的相关值
+           这样我们在更改数据库的时候只需要修改配置文件,而不需要去更改xml配置文件
+           
+           
+           属性文件写法:
+           变量名=value   比如   jdbc.driverClass=xxxx
+                                 jdbc.url=xxxxx
+                                 jdbc.username=xxxx
+           15.3在测试类中我们没有将测试类添加为beans但是依然可以属性注入是因为@ContextConfiguration这个注解提供的底层
+              整合好了允许我们这样做,不然的话使用注解属性注入需要使用<context:annotation-config>这个标签 并且那个类要
+              被spring管理
+              
+            15.4 STS插件  下载安装了可以提示全路径名字  
+           
+            15.5Spring的jdbc模板的crud操作
+              jdbctemplate 
+              插入删除修改 都是updata方法
+              jdbctemplate.update(sql,参数,参数)
+              
+              查询操作:
+                查询一个值(单个值) 
+                      jdbctemplate .queryForObject("sql",返回值类型的class类,参数)
+               
+                查询的是一行值或者多行值(返回的是对象或者list)
+                    查询一行值 使用queryForobjec
+                    T t= jdbctemplate.queryForobject(sql,rowMapper<T>接口,参数) 
+                        和DButil类似 我们需要去实现这个接口 重写里面的方法,在方法里我们手动封装查询所得数据到一个对象里面
+                        这里的泛型就是指定我们要返回的类型 给重写方法指定返回类型
+                   
+                   查询多行值使用query((sql,rowMapper<T>接口,参数)
+                   query()这个函数返回的是一个list<T> query这个方法帮我们完成了list的创建 
+                   和上面一样 我们仍然只需要重写rowMapper完成对一个对象的封装即可 
+                   比如query()的源码就是创建list,然后对查询的结果集Result rs 循环调用我们重写的数据封装方法
+                   
+                   创建list
+                   while(rs.next(),){
+                      循环调用重写方法得到对象
+                      将对象装到list里面
+                   }
+                    retuen  list<>
+           
+           
+           
+           16Spring的事务管理
+            两种方式:
+            编程式事务管理
+            声明式事务管理-通过配置xml或者注解来完成事务
+            
+            核心API:
+            PlatformTransactionManager:接口 是spring用于管理事务的真正对象
+               两个实现类:1DateSourceteansactionManager:  底层使用jdbc管理事务
+                          2Hibernatetransactionmanger: 底层使用hibernate管理事务
+           
+            TransactionDefinition类:定义事务信息  用于定义事务的相关信息 隔离级别 超时信息 传播行为
+             isolation开头的静态方法用于设置隔离级别
+             传播行为:事务的传播行为主要用来解决业务层方法相互调用的问题
+               有可能一个业务可能调用其他多个业务
+              &中事务的传播行为,分为三类(将设A B业务 b业务调用a业务)
+                Ⅰ保证多个操作在同一个事务 
+                progation_required   :默认值 如果A业务中有事务,就使用A中事务,如果A没有,创建一个事务,将所有操作包含进来,让操作在同一个事务
+                progation_support       如果A中有事务,则使用A事务,如果没有,不使用事务
+                progation_mandatory     如果A中有事务则使用A事务,如果没有则抛出异常
+                Ⅱ保证多个操作不在同一个事务 
+                progation_required_New   如果A中有事务则挂起,创建新事务包含自身操作,如果a中没有事务,则创建新事务包含自身操作
+                progation_require_Not_support   如果A中有事务则挂起,,创建新事务包含自身操作,如果没有则不使用事务管理
+                progation_never      如果A中有事务则抛出异常
+                Ⅲ嵌套式的事务
+                progation_nested
+                 嵌套事务,如果A中有事务,按照A的事务执行,执行完成后,设置一个保存点,执行B中的操作,如果没有异常,执行通过,如果有异常,可以选择回滚到起始
+                 或者保存点
+            
+            TransactionStatus:事务的状态   
+            
+            这三个的关系:
+            Spring经行事务管理的时候,首先平台事务管理器根据事务定义信息进行事务的管理,在事务管理过程中,产生各种
+            状态,将这些状态的信息记录到事务状态的对象中
+            
+            
+           17在编写Dao类的时候,由于每个dao都要注入jdbc模板 要申明jdbc模板私有变量和set方法,因此很麻烦
+           Spring提供了一个JdbcDaoSupport类  里面包含一个jdbvtemplate 变量个set方法 因此只要让我们的
+           Dao类去继承jdbcDaoSupport  那么就可以在xml中注入jdbc模板而不需要申明
+           
+           更简单的方法是结成了jdbcDaoSupport后,直接对Dao注入连接池而不是jdbc模板,因为在jdbcDaoSupport里面同样也有datasource这个类对象
+           当我们注入datasorce后  看源码可以知道  setdatasorce()方法并不是用于自身属性的注入,而是会生成一个jdbc模板赋值给jdbctemplate 变量
+           
+           当完成这个操作后,我们可以在Dao中  使用this.getjdbctemplate()得到模板,因为无法直接调用父类的私有jdbctemplate变量,但是可以调用方法得到变量
+           
+           
+            
+           18Spring事务管理流程   编程式事务管理
+           1配置平台事务管理器  这个接口两个实现类 一个底层使用jdbc    一个底层使用hibernate管理 
+           <bean id="transactionmanager" class="DataSourcetransactionmanger的全路径">
+           <property name="dataSource"></property>   需要给这个类注入一个连接池对象  有了连接才能开启关闭事务对吧!!!
+           </bean >   底层使用jdbc的类
+           
+            <bean id="transactionmanager" class="hibernagetransactionmanger的全路径">  同理   底层使用hibernate管理 
+           
+           2第二步 Spring提供了事务管理的模板类
+             <bean id=""  class="transactionTemplate全路径">  <property name="transactionManager" ref=""><>
+           模板类是由于简化了事务的操作,所以给模板类注入事务管理器类  使用事务模板类来管理事务
+           
+           3第三步  在业务层注入事务管理模板,因为是在业务层添加事务
+           调用方法
+           transTemplate.execute(new transactionCallbanwithoutResult(transactionStatus transactionstatus){
+              
+              在里面的一个叫doIntransactionwithoutresult()的重写方法中写我们事务包含的逻辑即可
+           
+           })
+           
+           
+           申明式管理事务(使用了AOP的思想)  所以需要AOP的关键jar包
+           底层其实就是我们在需要事务的时候 将事务的开启和关闭用Around的方式 包括住我们的service方法
+           XML方式:
+           1配置事务管理器 同上
+           2配置一个事务增强方法  由于事务的增强是固定的  所以Spring提供好了 只需要在xml里面配置即可
+           <tx:advice transaction-manager="xxx" id="txxxx">
+            <tx:attributes>   这里是定义事务管理的规则,看似很多实际是一个增强方法
+                <tx:method name="save*"  propagation="REQUIRED" isolation="">      这里就是给哪个方法配置事务  传播行为
+                <tx:method name="update*"   propagation="REQUIRED" isolation="">
+                <tx:method name="find*"    propagation="REQUIRED" isolation="">
+                <tx:method name="delete*  propagation="REQUIRED" isolation="">
+                 <tx:method name="*" propagation="REQUIRED" isolation="">  对所有方法进行....  name指定开启事务的方法
+            </tx:attributes>
+           <t/x:advice>
+           
+           3配置到目标类  配置AOP ( 将tx通知配置到具体的类或方法中)
+           <aop:config>
+           <aop:pointcut expression="execution()">  注意  一个切入点可以使用*包含多个方法  这里指向我们要增强的service方法
+           <aop:advidor advice-ref="增强的advice的id" pointcut-ref="">  这个标签用于一个增强和一个切入点对应的时候
+           </aop:config>
+           
+             <aop:aspect>用于一个切面类包含很多通知的时候使用,多个通知对应多个切入点
+           
+           
+           
+           
