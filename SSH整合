@@ -1,3 +1,4 @@
+一:SSH整合
 整合方式一无障碍整合:
 在web层怎么调用service,在没有将servlet交给spring管理的情况下,引入Spring-web包  配置spring的监听器 以及一个全局参数(spring的核心配置文件地址)
 <listener>
@@ -12,3 +13,202 @@
   然后就可以通过webApplicationContextUtils.getapplicationContext(servletContext);得到Spring的bean工厂对象
   
      ServletActionContext.getServletContext()；或者ServletContext servletContext= req.getServletContext();其中req是一个HttpServletRequest对象。
+
+hibernate核心jar- 在hibernate解压包下的lib/required中的jar包是必须有的
+                  其次mysql-驱动包
+                  日志记录包log4j 以及slf4j +slf4j-log4j整合jar包
+                  javasisit这个jar包只能存在一个 记住
+                  如果要使用c3p0的连接池 那么需要引入c3p0相关jar包  在hibernate中lib/option/c3p0
+                  
+  Spring 中要使用jdbc模板和事务的话 需要引入 Spring-jdbc 以及spring-tx包                 
+  Spring需求的包:
+  IOC: context core bean expression
+  IOC注解开发:AOP包  context schema
+  AOP: AOP包 Spring-aspect  第三话ASpectj 以及 AOPalliance
+  使用底层jdbc模板以及事务管理: Sping-jdbc包  Spring-tx包
+  使用Spring整合junit4:需要引入test包
+  
+  Strus的配置文件
+   1web.xml  配置Strusprepareandexcute 这个类的核心过滤器
+   2strus.xml
+   
+  hibernate配置文件
+   1hibernate.cfg.xml
+   2hibernate.hbm.xml
+   
+   Spring
+   benas.xml
+    web.xml配置监听器  监听web项目的启动时创建applicationContext 也就是bean工厂(或者说是IOC容器)
+    这个IOC容器会装在servletContext对象中  通过ServletActionxxx.get  或者req.getservletContext()获得这个对象
+      也就是我们配置了Spring的核心监听器后  可以通过 webapplicationContextUtile.getxxxx(servletContext);
+    
+    
+    日志属性文件 配置日志信息 log4J.properties 有了配置文件 Spring底层才会去使用log4J作为日志手段
+    
+   二SPring整合sturts注意点 
+    要注意的一点:
+      在Spring的类中注入属性的前提是:如果该属性是常量,可以直接注入  如果是类,那么这个类需要被Spring管理 
+      同时我们注入属性的类也需要被Spring管理  也就是在IOC容器中配置
+      
+      
+      Spring-strus-plugin这个插件帮助我们在不需要配置action被Spring管理的情况下,可以在action中直接注入属性,当然属性是类的话需要被Spring管理,只是不需要再xml中配置action的bean
+      还有就是需要配置Spring的核心监听器
+     
+     
+      还有要注意的是不论是SpringMVC还是struts2  它们的setvlet或者action模块交给Spring管理后需要多例生成
+    
+      
+    三
+    Spring整合hibernate注意点:
+   
+   第一种 带hibernate的核心配置文件
+    需要cfg和hnm映射表
+    编写实体类 javabean的时候注意 所有属性尽量使用封装类型
+    在cfg中引入hbm映射
+    cfg只有一个 但是hbm有很多个  有多少映射舅有多少hbm文件
+    
+   Spring整合hibernate:
+     1在Spring的配置文件中引入hibernate的相关配置 
+        
+        首先需要引入spring-orm包 这个包用于spring整合hibernate,然后可以使Spring管理hibernate中的相关类了
+       
+       Ⅰ在这个包中有一个类 LoaclsessionFactoryBean 
+       然后将这个类交给Spring管理  
+       <bean id="sessionFactory"  class="Localsessionfactory">
+       <property name="configLocation" value="classpath:xxxxContext.xml"/>
+       </bean>
+       这个类有什么用呢,这个类有一个属性configLocation 可以注入hibernate的核心配置文件  然后可以得到sessionFactory类
+       在hibernate中想要获得session工厂需要我们先创建Configuration对象 ,而这个对象是没有参数和属性的,hibernate用这个类的
+       configure()方法加载的配置文件然后返回对象的
+       比如  Configuration con= new Configuration().configure();
+       而LoaclsessionFactoryBean 这个类可以完成了上述操作的封装 然后返回会话工厂
+       
+       
+       Ⅱ而如果不用这个Spring-orm的jar包,hibernate自身的依赖是没有这个类的
+        然后就简单了 我们只需要将这个sessionfactory注入到Dao即可
+       
+        但是Spring和hibernate整合后提供了一个 hibernatetemplate进一步简化操作 
+        将sessionFactory注入到这个hibernatetemplate类中
+         类似于jdbcTemplate需要一个连接池对象,而sessionFactory是类似于连接池的
+        <bean id="hibernate" class="HibernateTemplate的全路径">
+        <property id="sessionFactory" ref="">
+        <bean/>
+       
+        其次这个hibernateTemplate还可以进一步简化使用,只要我们的Dao类继承hibernateDaoSUpport(类似于jdbcDaosupport)
+        然后这个Dao类就有了 hibernateTemplate以及sessionFactory这两个属性 以及相应的set方法
+        我们只需要给Dao植入sessionFactory那么 setsessionFactory()这个方法会帮我们生成hibernateTemplate对象
+        
+        然后就可以使用hibernateTemplate模板进行CRUD了
+       
+       配置事务管理器(注意进行事务管理还是需要Spring-jdbc包和Soring-tx包的,不管底层是jdbc还是hibernate都需要这两个包)
+        <bean id="txmannager" class="hibernateTransactionManager">
+        <property id=""  ref="session工厂">
+        </bean>  这里要说的是我们使用jdbc的事务管理使用的是DateSourceTxManager这个类 ,而hibernate是hibernateTransactionManager这个对象
+        当我们使用hibernate的底层管理事务的时候需要配置相应的类以及注入相应的会话工厂
+        配置这个事务管理器告诉Spring我们要使用什么样的底层来进行事务管理(一种是jdbc的 一种是hibernate的)
+        此时我们使用this.getHibernateTemplate()得到的模板对象相当于session对象  保存的操作和hibernate中一样的
+        this.getHibernateTemplate().save().......
+        (Spring自带的连接池DrivemangerDataSource)
+   
+       2 (第二种整合方式)Spring整合hibernate不带hibernate的配置文件
+        将hibernate的配置交给Spring
+             cfg中有哪些配置要交给Spring呢?
+              1数据库的相关配置
+              2hibernate方言 显示sql 格式化sql
+              3使用外部数据库连接池的配置  比如c3p0
+              4映射文件的引入
+        将这些配置交给Spring
+       Ⅰ在Spring配置文件中 配置c3p0或者本地连接池DrivemangerDataSource n,同时设置各种数据库连接参数
+       <bean id="dataSource" class="">
+       <property></>
+       </bean>
+       Ⅱ由于没有hibernate配置文件了,所以 需要将datasource注入到sessionfactory  因为通过配置文件得本质还是要要通过连接池等配置生成会话工厂
+       <property name="dataSource" ref="dataSource"/>
+       Ⅲ在sessionfactorybean中注入hibernate的属性(复杂类型输入 不同于普通和类注入 类似于数组 list的注入)
+        <peoperty id="hibernateproperties"/>  
+          <pros>
+           <pro  key="hibernate.dialect"></pro>    属性名和hibernate中的一致
+           <pro  key="hibernate.show_sql">true</pro>
+           <pro  key="hibernate.format_sql">true</pro>
+           <pro  key="hibernate.hbm2ddl.auto">update</pro>   b表生成方式
+            </pros>
+        <peoperty>
+       Ⅳ注入映射属性     映射是指将类映射到表的操作 以及关系的映射  单表只有表的映射  多表还要涉及关系映射
+       由于映射文件数量不定,所以在sessionfactory中的这个set方法是一个 (String...mappingresources)的可变参数 
+       而可变参数在函数中的引用是当作数组来使用的,因此也可以给可变参数传递数组参数或者lis参数,可变参数大的特点就是允许参数为空
+       
+        <property id="mappingresource"> 
+        <list>
+        <value>映射文件位置 使用/分隔 </value> 
+        </list>
+        </preperty>    spring将这个xml解析出来生成list对象传给setmappingresource(String...mappingresources)实现注入
+   
+       完整配置:
+       <bean id="dataSource" class="">
+             <property></>
+       </bean>
+       <bean id="sessionFactory"  class="Localsessionfactory">
+            <property name="dataSource" ref="dataSource"/>
+            <peoperty id="hibernateproperties"/>  
+                <pros>
+                 <pro  key="hibernate.dialect"></pro>    属性名和hibernate中的一致
+                 <pro  key="hibernate.show_sql">true</pro>
+                 <pro  key="hibernate.format_sql">true</pro>
+                 <pro  key="hibernate.hbm2ddl.auto">update</pro>   表生成方式
+                 </pros>
+             <peoperty>
+             <property id="mappingresource"> 
+                  <list>
+                  <value>映射文件位置 使用/分隔 </value>
+                  </list>
+            </preperty>   
+       </bean>
+   
+     
+   四hibernate模板的使用
+    hibernateTemplate里面的方法
+    和hibernate大致一样
+    save()方法用于保存对象 也就是插入到数据库
+    update()用于更新  分为1先查询对象,再更新 2创建对象,直接覆盖  因为是根据对象的主键来进行更新的
+    delete()用于删除数据   和update一样 1先查询对象,再删除 2创建对象,设置主键,然后直接删除  根据主键来删除
+    get(customer.class,id)方法用于查询一行数据   通过给定主键查询一行值 返回一个给定的对象
+    load()
+    查询所有数据要使用HQL和QBC
+   1HQL
+       hibernateTemplate.find("from Customer")  这个方法返回list
+   2QBC(分页查询最好用的方法)
+   
+     比如DetachedCriteria criteria=DetecheedCriteia.forClass(Customer.calss)
+         hibernateTemplate.findByCriteria(传入一个离线的Criteria)
+   
+   四延迟加载问题
+   
+   当我们事务的逻辑迁移到业务层,业务层结束之后,session由事务关闭,因此懒加载失效
+   但是在web层得到的数据中去调用外键等数据的时候,由于session关闭了,我们无法通过session执行懒加载
+   等到外键等数据
+   
+   Spring提供的解决延迟加载的方法:
+      *OpenSessionInViewFilter 提供过滤器 在视图层开启session
+       也就是配置一个过滤器,在执行相应页面的时候经过这个过滤器
+       这个过滤器会在web层打开线程绑定的session  在web层关闭session 这样就解决了延迟加载
+       当然在web层绑定的session会交给service层的事务使用
+       
+       配置:
+       需要在web.xml配置 过滤器(指在执行http请求的之前先执行过滤器,其实就是一个serlvet,对页面进行预处理)
+       <filter>
+       <filter-name>
+       <filter-class>OpenSessionInViewFilter的全路径<filter-class>
+       </filter>
+       <filter-mapping>
+       <filter-name>
+       <url-pattern>*.action</url-pattern>   拦截所有的.action结尾的http请求
+        <filter-mapping>
+        
+        配置好这个过滤器后 它会帮我们自动创建线程绑定的session以及关闭session
+        这个过滤器要放在strusts2的核心过滤器前面,因为filter有执行顺序
+        
+        如果strusts2的核心过滤器先执行,那么执行完之后就会马上执行action..
+        
+        也就是解决延迟加载问题只需要配置一个位于web.xml的过滤器就行 
+        
+   
