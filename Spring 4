@@ -310,7 +310,7 @@ schema:SPring XML文档的相关约束
      </aop:config>
      
      ****************************************************
-     被AOP增强的类也一定要被Spring管理
+     被AOP增强的类也一定要被Spring管理,被Spring管理的类才能触发AOP的增强,其实是Spring会对代理类进行拦截扫描注解或者xml增强.
      
      14SSpringAOP中通知类型 通知就是用以增强的方法
       1前置通知  <aop:before method>  在目标方法执行之前通知
