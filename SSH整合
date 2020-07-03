@@ -1,0 +1,14 @@
+整合方式一无障碍整合:
+在web层怎么调用service,在没有将servlet交给spring管理的情况下,引入Spring-web包  配置spring的监听器 以及一个全局参数(spring的核心配置文件地址)
+<listener>
+  	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+  
+  <context-param>
+  	<param-name>contextConfigLocation</param-name>
+  	<param-value>classpath:applicationContext.xml</param-value>
+  </context-param>
+  
+  然后就可以通过webApplicationContextUtils.getapplicationContext(servletContext);得到Spring的bean工厂对象
+  
+     ServletActionContext.getServletContext()；或者ServletContext servletContext= req.getServletContext();其中req是一个HttpServletRequest对象。
