@@ -309,6 +309,9 @@ schema:SPring XML文档的相关约束
      </aop:aspect>
      </aop:config>
      
+     ****************************************************
+     被AOP增强的类也一定要被Spring管理
+     
      14SSpringAOP中通知类型 通知就是用以增强的方法
       1前置通知  <aop:before method>  在目标方法执行之前通知
           任意通知都可以获得切入点信息,只需要在通知(增强方法)中添加参数,JoinPoint joinpoint  这个类是aspectj提供的类
