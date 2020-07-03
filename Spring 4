@@ -458,14 +458,9 @@ schema:SPring XML文档的相关约束
            
         15.2使用属性文件配置数据库的相关值  
            可以在spring核心xml里面引入属性文件
-           第一种方式
-            <bean class="peoperplaceholderCOnfigure类路径">   托管的这个类不用id,因为这是spring自己监测的 我们也不使用
-            <peoperty  name="location" value="classpath:属性文件"></peroperty>
-            </bean>
-            
-           第二种方式:
+    
             通过context标签 
-            <context:property0palceholder location="xxxx"/>
+            <context:propertypalceholder location="xxxx"/>
             <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
            <property name="driverClassName" value="${变量名}"></property>
            <property name="url" value="${变量名}"></property>
@@ -530,19 +525,22 @@ schema:SPring XML文档的相关约束
              isolation开头的静态方法用于设置隔离级别
              传播行为:事务的传播行为主要用来解决业务层方法相互调用的问题
                有可能一个业务可能调用其他多个业务
-              &中事务的传播行为,分为三类(将设A B业务 b业务调用a业务)
+              &中事务的传播行为,分为三类
                 Ⅰ保证多个操作在同一个事务 
-                progation_required   :默认值 如果A业务中有事务,就使用A中事务,如果A没有,创建一个事务,将所有操作包含进来,让操作在同一个事务
-                progation_support       如果A中有事务,则使用A事务,如果没有,不使用事务
-                progation_mandatory     如果A中有事务则使用A事务,如果没有则抛出异常
+                progation_required   :默认值 如当前上下文中有事务,就使用A中事务,如果A没有,创建一个事务,将所有操作包含进来,让操作在同一个事务
+                progation_support       如果当前上下文中有事务,则使用A事务,如果没有,不使用事务
+                progation_mandatory     如果当前上下文中有事务则使用A事务,如果没有则抛出异常
                 Ⅱ保证多个操作不在同一个事务 
-                progation_required_New   如果A中有事务则挂起,创建新事务包含自身操作,如果a中没有事务,则创建新事务包含自身操作
-                progation_require_Not_support   如果A中有事务则挂起,,创建新事务包含自身操作,如果没有则不使用事务管理
-                progation_never      如果A中有事务则抛出异常
+                progation_required_New   如果当前上下文中有事务则挂起,创建新事务包含自身操作,如果a中没有事务,则创建新事务包含自身操作
+                progation_require_Not_support   如果当前上下文中有事务则挂起,,创建新事务包含自身操作,如果没有则不使用事务管理
+                progation_never      如果当前上下文中有事务则抛出异常
                 Ⅲ嵌套式的事务
                 progation_nested
-                 嵌套事务,如果A中有事务,按照A的事务执行,执行完成后,设置一个保存点,执行B中的操作,如果没有异常,执行通过,如果有异常,可以选择回滚到起始
+                 嵌套事务,如果当前上下文中有事务,按照当前上下文中的事务执行,执行完成后,设置一个保存点,执行B中的操作,如果没有异常,执行通过,如果有异常,可以选择回滚到起始
                  或者保存点
+            
+            
+                我们要清楚的是不论是传播行为也好还是隔离级别都是针对自身而言的,比如事务A的隔离级别是读已提交,那么其他事务就不能读事务A为提交的数据
             
             TransactionStatus:事务的状态   
             
@@ -601,11 +599,46 @@ schema:SPring XML文档的相关约束
            3配置到目标类  配置AOP ( 将tx通知配置到具体的类或方法中)
            <aop:config>
            <aop:pointcut expression="execution()">  注意  一个切入点可以使用*包含多个方法  这里指向我们要增强的service方法
-           <aop:advidor advice-ref="增强的advice的id" pointcut-ref="">  这个标签用于一个增强和一个切入点对应的时候
+           <aop:advisor advice-ref="增强的advice的id" pointcut-ref="">  这个标签用于一个增强和一个切入点对应的时候
            </aop:config>
-           
              <aop:aspect>用于一个切面类包含很多通知的时候使用,多个通知对应多个切入点
            
            
+           注解事务方式:
+           1配置事务管理器
+           <bean id="dataSourceManager" class="DataSourceTransactionManager">
+             <property name="dataSource"  ref=""> </property>
+           </bean>
            
-           
+           2开启注解事务  (和AOP注解要开启<AOP:aspectj:...autopRoxy>一样  属性注解annptation-config)
+          <tx:annotation-driven transaction-manager="TransactionManger">
+          这个标签需要一个事务管理器属性
+          
+           3添加标签@transactionl 
+               
+                需要注意的是 @transactionl 可以添加在类上也可以添加在方法上,添加在类上对里面所有方法生效 添加在方法上的会覆盖类上的
+                但是我们要注意 如果仅仅添加在方法上,会导致同一个类中的方法相互调用无法触发事务
+                
+                原因: Spring采用动态代理(AOP)实现对bean的管理和切片，它为我们的每个class生成一个代理对象。只有在代理对象之间进行调用时，可以触发切面逻辑。
+                而在同一个class中，方法B调用方法A，调用的是原对象的方法，而不通过代理对象。所以Spring无法切到这次调用，也就无法通过注解保证事务性了。
+                也就是说，在同一个类中的方法调用，则不会被方法拦截器拦截到，因此事务不会起作用。
+
+                解决方案:
+                可以将方法放入另一个类，并且该类通过spring注入，即符合了在对象之间调用的条件。
+                获取本对象的代理对象，再进行调用。具体操作如：
+                1）Spring-content.xml上下文中，增加配置：<aop:aspectj-autoproxy expose-proxy=“true”/>
+                2）在xxxServiceImpl中，用(xxxService)(AopContext.currentProxy())，获取到xxxService的代理类，再调用事务方法，强行经过代理类，激活事务切面
+
+                注意  如果在类上+事务注解是绝对没问题的,只有单独在方法上加事务才会出现上述问题
+                类上加事务，方法不加事务，事务是生效的！
+                类上加事务，方法也加事务，事务是生效的
+
+          
+          
+          
+          
+          
+          
+         
+          
+          
