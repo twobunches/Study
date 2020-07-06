@@ -4,4 +4,52 @@ https://blog.csdn.net/qq_43437465/article/details/90402896?utm_medium=distribute
 
 2开启或者关闭Oracle服务   手动在任务管理器开启或者关闭一下服务
 oracleserviceoRCL
-oracleoradb11g_home1TnsListener
+oracleoradb11g_home1TnsListener 
+
+
+运行services.msc  然后开启上述服务,其他oracle开头的也可以启用
+
+3虚拟机配置网络
+
+点击VMware客户端的编辑选项
+选择编辑网络编辑器  选择仅主机模式 勾选将主机虚拟适配器连接到此网络和使用DHCP 
+然后添加一个网络  
+
+之后我们就可以将我们想要的虚拟机配置指定的网络
+
+4连接到oracle数据库
+在oracle里只有一个数据库orcl
+cmd窗口连接  sqlplus  用户名/密码@地址(本机用localhost外部的用ip) :1521/oral
+
+5 PLsql  
+ 这是一个基于instanceclient的图形化客户端 
+  使用它需要在(oracle服务器的安装路径)D:\Oracle\product\11.2.0\dbhome_1\NETWORK\ADMIN\tnsnames.ora   文件中设置连接监听
+  如果服务端和客户端不在一台机器上,那么在客户端上需要先安装instanceclient,并且将tnsnames.ora复制一份到instanceclient的安装路径下,并且打开客户端的配置设置oracle的主目录名,也就是instanceclient
+
+
+
+
+
+
+6 Oracle客户端监听服务配置方法
+ 可直接修改tnsnames.oRA文件
+    Oracle客户端中一般有两个tnsnames.oRA文件，配置监听要修改的是Oracle客户端家目下的$ORACLE_HOME/network/admin/tnsnames.oRA。
+   例如：
+   D:\app\shaiya\product\11.2.0\client_1\network\admin\tnsnames.oRA
+   修改tnsnames.oRA(注需修改两个文件)文件，多个服务器重复以下内容即可，示例：
+   数据库别名=
+   (DESCRIPTION =
+   (ADDRESS_LIST =
+   (ADDRESS = (PROTOCOL = TCP)(HOST = IP地址)(PORT = 端口))
+   )   
+   (CONNECT_DATA =
+   (SERVICE_NAME = DEVELOP)
+   )
+   )
+ 
+
+
+
+
+
+              
