@@ -1,0 +1,7 @@
+1 .Oracle的安装
+https://blog.csdn.net/qq_43437465/article/details/90402896?utm_medium=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase
+安装教程在以以上连接中
+
+2开启或者关闭Oracle服务   手动在任务管理器开启或者关闭一下服务
+oracleserviceoRCL
+oracleoradb11g_home1TnsListener
