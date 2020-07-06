@@ -1,10 +1,10 @@
-1 .Oracle的安装
+1 .Oracle服务端的安装  oracle11g
 https://blog.csdn.net/qq_43437465/article/details/90402896?utm_medium=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase
 安装教程在以以上连接中
 
 2开启或者关闭Oracle服务   手动在任务管理器开启或者关闭一下服务
 oracleserviceoRCL
-oracleoradb11g_home1TnsListener 
+oracleoradb11g_home1TnsListener    这是核心的两个Oracle服务,一般开启这两个服务就够了
 
 
 运行services.msc  然后开启上述服务,其他oracle开头的也可以启用
@@ -17,39 +17,237 @@ oracleoradb11g_home1TnsListener
 
 之后我们就可以将我们想要的虚拟机配置指定的网络
 
-4连接到oracle数据库
+4连接到oracle数据库  可以使用服务端自带的SQL-plus窗口 或者免安装的instanceclient客户端
 在oracle里只有一个数据库orcl
 cmd窗口连接  sqlplus  用户名/密码@地址(本机用localhost外部的用ip) :1521/oral
 
 5 PLsql  
- 这是一个基于instanceclient的图形化客户端 
-  使用它需要在(oracle服务器的安装路径)D:\Oracle\product\11.2.0\dbhome_1\NETWORK\ADMIN\tnsnames.ora   文件中设置连接监听
-  如果服务端和客户端不在一台机器上,那么在客户端上需要先安装instanceclient,并且将tnsnames.ora复制一份到instanceclient的安装路径下,并且打开客户端的配置设置oracle的主目录名,也就是instanceclient
+  这是一个基于instanceclient的图形化客户端 
+  如果服务端和客户端不在一台机器上
+     Ⅰ那么在客户端上需要先安装instanceclient,并且将tnsnames.ora复制一份到instanceclient的安装根路径下,
+     Ⅱ并且打开PL客户端的配置(confidgure)-设置oracle的主目录名,也就是instanceclient文件夹地址  
+     Ⅲ然后还需要在客户端的电脑上设置环境变量TNS-ADMINE =等于tnsnames.ora文件的地址
+  
+  如果服务端和客户端在一台机器上
+    不需要上述繁琐的操作,只需要安装PLSQL即可,并且也不需要安装instanceclient(免安装的)
+    因为当安装好服务端后自带了客户端,所以不需要上述操作
+**********************************************************
+ 另外还需要配置下面两个文件
+
+6在oracle 服务端中中有两个重要的文件
+listener.ora文件   监听文件
+
+listener.ora是服务器端用的，oracle监听程序，就是读的这个文件，里面有oracle服务器端的socket监听地址和端口（
+如果要想局域网中的其他人，能够访问我本地的oracle，要把我本机的地址写进去，如10.11.19.19
+文件地址：\oracle\product\10.2.0\db_1\NETWORK\ADMIN
+LISTENER =
+	(DESCRIPTION_LIST =
+		(DESCRIPTION =
+			(ADDRESS = (PROTOCOL = IPC)(KEY = EXTPROC1521))
+			(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))
+			(ADDRESS = (PROTOCOL = TCP)(HOST = 10.11.19.19)(PORT = 1521))
+		)
+	)
+
+
+tnsnames.ora文件  客户端连接配置文件 客户端通过读取这个文件连接数据库
+
+tnsnames.ora是记录客户端访问数据库的本地配置：
+客户端是通过tnsnames.ora来识别连接服务器的(所以这是为什么当我们下载PLSQL后需要将这个文件复制到instanceClient下 并且配置环境变量)
+如果你没有添加tnsnames.ora,那么你就连接不上服务器的。。
+文件地址：\oracle\product\10.2.0\db_1\NETWORK\ADMIN
+在连接配置文件中添加一下配置即可:
+ORCL(数据库别名) =
+(DESCRIPTION =
+	(ADDRESS_LIST =
+		(ADDRESS = (PROTOCOL = TCP)(HOST = 主机地址)(PORT = 端口))
+		(CONNECT_DATA =
+			(SERVER = DEDICATED)
+			(SERVICE_NAME = orcl)
+		)
+	)
+)
+其中，每个部分的解释如下所示：
+l PROTOCOL：客户端与服务器端通讯的协议，一般为TCP，该内容一般不用改。
+2 HOST：数据库所在的机器的主机名或IP地址。不管用主机名还是IP地址，在客户端一定要用ping命令ping通数据库所在的机器，否则需要在hosts文件中加入数据库所在的机器的主机名和IP地址的对应关系。
+3 PORT：数据库监听器的端口，可以查看服务器端的listener.ora文件或在数据库服务器中通过lsnrctl status [listener name]命令来查看。一般为1521端口。
+4 SERVICE_NAME：在数据库中使用“SHOW PARAMETER SERVICE_NAME”命令查看，一般情况下和DBNAME相同
 
 
 
+七Oracle数据库的体系结构
+通常情况下,Oracle数据库只会有一个实例orcl
+
+ MYSQL:一个项目创建一个数据库,创建相应的表
+ oracle:一个项目创建一个表空间 在这个表空间创建用户(主人),用户去创建表
+
+Mysq是多数据库,不用用户同不同数据库
+Oracle是多用户的 用户拥有表空间的权限
 
 
 
-6 Oracle客户端监听服务配置方法
- 可直接修改tnsnames.oRA文件
-    Oracle客户端中一般有两个tnsnames.oRA文件，配置监听要修改的是Oracle客户端家目下的$ORACLE_HOME/network/admin/tnsnames.oRA。
-   例如：
-   D:\app\shaiya\product\11.2.0\client_1\network\admin\tnsnames.oRA
-   修改tnsnames.oRA(注需修改两个文件)文件，多个服务器重复以下内容即可，示例：
-   数据库别名=
-   (DESCRIPTION =
-   (ADDRESS_LIST =
-   (ADDRESS = (PROTOCOL = TCP)(HOST = IP地址)(PORT = 端口))
-   )   
-   (CONNECT_DATA =
-   (SERVICE_NAME = DEVELOP)
-   )
-   )
- 
+八Scott用户和HR用户  ORCALE提供的用户,这些用户下的自带表可以让我们把oracle练习一遍
 
+    Scott用户下的表  这些表已经自带了数据
+     ⅠDEPT表
+     2EMP表
+     3......
 
+    HR用户
+     Ⅰjobs
+      ⅡEMPLOYEES
+       ......
+         
+         
+   九基本查询
+   SQL四大类:
+     DDL:数据定义语言 create
+     DML:数据操纵语言 insert
+     DQL:数据查询语言 select
+     DCL:数据控制语言 grant 权限控制
+         
+      在Oracle中DQl语句 select的结构和mysql中一致 select * from where   group by  having  order by
+       但是还是有区别:
+       在Oracle中 select 1+1;是错的  缺少一个表from字段
+       在mysql中 select 1+1; 会自动生成一个带有一行值为2的表
+         
+        在oracle中 需要 select 1+1 from dual; 
+        dual表是oracle中的虚表,伪表,主要是用来补齐语法结构的
+        这个虚表可以用于计算
+        
+        但是如果是select 1 from 一个真实的表  这种方式是得不到第一列数据的 这个和mysql还是有区别的
 
+        Ⅰ 别名查询:使用as关键字,可以省略
+         select ename(as) 姓名,sal 工资 fron emp;   别名不能带空格 如果要空格那么别名需要使用双引号
 
+        Ⅱ去除重复字段使用distinct关键字
+          select distinct hob from emp;  不管是多列
 
+        Ⅲ 则运算:数字属性列之间可以四则运算 比如sal+comm
+           但是要注意的是 如果是数字+null=null
+           怎么解决这个问题呢?
+           nvl函数 ---- nvl(列名,0)  作用:如果参数1为null,返回参数2
+
+         Ⅳ字符串拼接
+          select ename from emp; 在oracle种使用||进行拼接
+          比如select '姓名:'||ename from emp;
+          查询出来的效果就是每一行的前面带上了姓名:
+          在MYSQL种使用concat()进行拼接,oracle也有这个函数
+          比如select concat('姓名:',ename) from emp;   
+          
+          *******************************
+          这里说一下不管是Oracle还是Mysql种查询语句怎么执行的
+          查询对表种的每一行先进行where字句判断是否符合条件
+          如果是符合条件的再进行select的投影查询,取出相应的列
+          在selec中还可以对相应的列进行处理,比如上面的字符串拼接
+          ***************************************
+          
+    十条件查询  就是where后面的条件
+      Ⅰ关系运算符:> >= < <=
+        逻辑运算符 and or not
+        其他运算符 
+          模糊查询 like  %匹配多个字符 _匹配单个字符 匹配字符串用单引号''括起来
+          select *from emp where ename like 'S%'  这个就是以s开头的所有名字   '__O%第三个字符是o的姓名 '
+          \通配符 被\修饰的%或者_就代表自身   
+          比如select *from emp where ename like '%\%%'  姓名包含%的人
+         
+          in  in可以直接用在一个集合()   也可以用在子查询
+         
+          between .. and..
+          
+          is null  空
+          
+          is not null  非空
+          
+          排序查询:
+            order by 列名
+            升序 asc
+            降序 desc
+             select * from emp order by comm desc null first 或者 last;
+             排序中的空值可以使用 null first或null last 把null值放在最后面或者最前面
+             
+          排序多列:
+          select deptno,sal from emp order by deptno asc,sal desc 按照编号升序 工资降序
+          这种排序是指必须在编号升序的形况下,再对编号相同的号码进行工资排序,也就是有一列是
+          完全升序降序,而另外一列是部分排列的
+    
+    十一函数 
+       函数:必须要有返回值
+       单行函数:对某一行中的某个值进行处理
+          数字函数
+            ceil()向上取整  floor()向下取整   select ceil(42.6) from dual;
+            round(参数1,参数2) 四舍五入函数 保留(参数2)个小数
+                round(42.926,2)=42.93
+                round(42.926,1)=42.9
+                round(42.926,0)=43
+                round(42.926,-1)=40
+                round(42.926,-2)=0
+                负数就代表向左边看
+            截断函数trunc(1,2):截断和近似值函数类似 只不过不进行四舍五入而是直接截断保留小数
+            求余函数: mod(参数1,参数2) mod(9,3)=0
+             
+          字符函数
+           substr(str1,起始索引,长度) 用来求一个字符串的子字符串的  
+           但是要注意索引不管是写0还是写1,都是从第一个字母开始截取
+           length()获取长度
+           trim()去除字符串左边和右边的空格
+           replace(str1,'字符a','字符b')
+         
+          日期函数
+             查询当天日期  select sysdate from dual;  这里要注意不需要()
+             查询3个月后的今日的日期
+             select add_months(sysdate,3) from dual
+             查询三天后的日期
+             select sysdate+3 from dual  这里是根据当前计算机所得
+             months_between(日期1,日期2) 返回两个日期之间的月数
+             *******************************
+             要注意的是日期类型相减会得到一个数值类型,这个数值类型的值=日期的差值所对应的天数(day)
+             
+          转换函数
+              字符转数值  这里的字符包括字符串 在oracle中''单引号括起来的都叫字符
+              to_number(str)   select 100+'10' from dual 这个没问题  oracle帮我们自动转换了
+              数字和日期转字符
+              select to_char(sal,'$9999.99')   比如sal是1270.236 那么结果就是'$1270.23'
+              select to_char(sysdate,'yyyy-mm-dd hh:mi:ss')  这里和java的date类有点像 将日期格式转化为我们想要的类型
               
+              select to_char(sysdate,'d') 返回的是这一日期是一周的第几天
+              select to_char(sysdate,'dd') 返回的是这一日期是一个月的第几天
+              select to_char(sysdate,'ddd') 返回的是这一日期是一年的第几天
+              select to_char(sysdate,'day') 将日期转化为一周的英文单词
+              字符转日期:
+               to_date('2017-02-16','yyyy-mm-dd') 这里第一个参数是字符串的日期 第二个参数是描述其结构的参数
+               比如对日期属性的列 我们要得到某2个日期之间的行
+               select * from emp where date between to_date('1982','yyyy') and to_date('1990','yyyy')
+                这里得到了日期位于1982年和1990年之间的行
+          通用函数
+            nvl(参数1,参数2)  如果参数1是null,就返回参数2 否则返回参数1
+            nvl2(参数1,2,3) 如果参1=null 那么返回参数3 否则返回参数2
+            nullif(1,2) 如果参数1=参数2  返回null 否则返回
+          条件表达式:
+             case 字段(属性名):
+                 when 值1 then 值
+                 when 值2 then 值
+                 else 
+                      值
+                  end
+            比如   select  case ename
+                       when 'smith' then 'hh'
+                       when  'mmm'  then 'xx'
+                       else 'hp'(默认值)
+                     end
+                     from emp;
+            这里的条件表达式就是对满足条件的行的某些字段(列) 进行进一步的筛选以及做一些处理
+            比如上述例子将名字为smith的变成hh  将mmm变成xx 其他的都变成hp  上面的写法是通用写法
+            Oracle特有的写法 decode(ename,'SMIth','刘备小儿','scott','曹操','路人乙')  和上面的功能一致,最后一个参数是不满足条件要变的默认值
+            
+            
+       多行函数:对某一列的所有行进行处理
+            比如max() min() count() sum() avg()  等五种聚合函数
+             多行函数是自动忽略空值的
+             多行函数可以用数字来代替列名 比如count(2)= count(ename)
+    
+       分组查询
+          方式 语法和mysql一致
+          where后面不能接聚合函数,,可以接单行函数
+          having 可以接聚合函数也能接单行函数
+          
