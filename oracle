@@ -509,7 +509,7 @@ rownum:伪列,系统自动生成的一列,用来表示行号,从1开始,由Oracl
 	       使用子查询创建表
 	       create table 表名 as  子查询;
 	       
-	       可以使用用户名.表名引用其他用户下的表
+	       可以使用用户名.表名引用其他用户下的表(前提是拥有该权限,比如DBA的权限可以修改所有表空间的表)
 	       
 	       比如select * from scott.emp;
 	       craate table emp1 as select * from scott.emp;  可以用这种形式复制一个表
