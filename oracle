@@ -72,9 +72,11 @@ l PROTOCOL：客户端与服务器端通讯的协议，一般为TCP，该内容�
 2 HOST：数据库所在的机器的主机名或IP地址。不管用主机名还是IP地址，在客户端一定要用ping命令ping通数据库所在的机器，否则需要在hosts文件中加入数据库所在的机器的主机名和IP地址的对应关系。
 3 PORT：数据库监听器的端口，可以查看服务器端的listener.ora文件或在数据库服务器中通过lsnrctl status [listener name]命令来查看。一般为1521端口。
 4 SERVICE_NAME：在数据库中使用“SHOW PARAMETER SERVICE_NAME”命令查看，一般情况下和DBNAME相同
+**************************************************************************************************************************************************************
+开机后，启动任务管理器，发现oracle监听服务无法启动，导致PLSQL无法连接。原因在于，本机的IP地址发生了变化。解决办法就是修改监听和连接配置文件,将ip地址改为目前的ip
+***************************************************************************************************************************************************************
 
-
-
+v
 七Oracle数据库的体系结构
 通常情况下,Oracle数据库只会有一个实例orcl
 
@@ -118,8 +120,12 @@ Oracle是多用户的 用户拥有表空间的权限
         但是如果是select 1 from 一个真实的表  这种方式是得不到第一列数据的 这个和mysql还是有区别的
 
         Ⅰ 别名查询:使用as关键字,可以省略
-         select ename(as) 姓名,sal 工资 fron emp;   别名不能带空格 如果要空格那么别名需要使用双引号
-
+         select ename(as) 姓名,sal 工资 fron emp;   
+	 别名不能带空格 如果要空格那么别名必须需要使用双引号
+	  可以省略as 也可以省略双引号 
+	  取别名得时候不能使用单引号 Oracle中被单引号括起来的是字符或者字符串  oracle只认为双引号括起来的为别名
+          在Oracle中除了别名使用"",其他都要使用单引号''表示字符
+	   数字作为别名的时候可以省略as但是一定不能省略""
         Ⅱ去除重复字段使用distinct关键字
           select distinct hob from emp;  不管是多列
 
@@ -224,7 +230,7 @@ Oracle是多用户的 用户拥有表空间的权限
             nvl2(参数1,2,3) 如果参1=null 那么返回参数3 否则返回参数2
             nullif(1,2) 如果参数1=参数2  返回null 否则返回
           条件表达式:
-             case 字段(属性名):
+             case 字段(属性名)
                  when 值1 then 值
                  when 值2 then 值
                  else 
@@ -250,4 +256,233 @@ Oracle是多用户的 用户拥有表空间的权限
           方式 语法和mysql一致
           where后面不能接聚合函数,,可以接单行函数
           having 可以接聚合函数也能接单行函数
-          
+	  
+	  要注意的在分组查询之中使用聚合函数 这里聚合函数处理的是每一个组  比如select max(sal)  .....这里是求每一个组的最大值	  
+十二:多表查询	  
+	 select * from 表一,表二;
+	 多表连接在没有where子句的情况下是一个笛卡尔积的结果,笛卡尔积的结果是表1*表二行数,每一行的属性是两个表所有的属性
+	 但是这里没有指定连接条件,因此有很多无意义的数据,要设置连接条件 在where子句或者显示内连接 
+	  
+	  显示内连接:指的是连接条件在from子句里面 
+	   	连接查询后两个表名字相同得列一定要用表明来引用,虽然没什么区别
+		select e1.empno,e1.ename,d1.deptno,d1.dname,e1.mgr,e2.ename,e2.deptno,d2.dname
+		from emp e1,emp e2,dept d1,dept d2 
+		where
+		     e1.deptno = d1.deptno
+		  and e1.mgr = e2.empno 
+		  and e2.deptno = d2.deptno;
+		 **********************************************************8
+		 有时候连接并不一定依赖于外键 比如
+		select emp.empno,emp.ename,emp.sal,
+		 case salgrade.grade
+		 when 1 then '一级'
+		 when 2 then '二级'
+		 when 3 then '三级'
+		 when 4 then '四级'
+		   else
+		   	'五级'
+		 end  "等级"	
+		from  emp,salgrade
+		where emp.sal between salgrade.losal and salgrade.hisal; 
+	           这里查询了员工的号码 姓名 工资以及工资的等级  工资的等级在工资等级表中 而在这个表中每个等级都有一个最高工资和最低工资
+		   如果工资在这个等级的工资范围内就属于这个等级,那么当我们根据员工的工资去连接表的时候,条件是这个员工的工资是否在这个范围
+		*******************************************************************************
+	        可以通过条件表达式或者decode()进一步处理单个属性列,要注意条件表达式case 后面没有冒号,直接跟when then 然后when then之间也又没,号
+		 只有属性列和属性列之间存在逗号 或者表与表之间存在逗号 但是最后一个属性列或者最后一个表不需要逗号
+		   
+		 
+	  隐式内连接:
+	  	select *from 表一 inner join 表2 on 条件
+			    inner join 表3 on 条件.....
+	 	外连接:
+		select *from 表一 left outer join 表2 on 条件
+			    left outer join 表3 on 条件.....
+               右外连接一样的
+	       
+	   这里是通用的外连接写法:
+	   在Oracle中的外连接(+):
+	     select * from emp e1, dept d1 where e1.deptno=d1.deptno(+);
+	       这里再属性后面添加(+)的意思是,在连接两个表的时候,如果右边不存在相应的行和左的某行对应
+	       那么保留左边中所有行,并在右边不存在的属性列全部+空值
+	       
+	       意思就是左外连接 在Oracle中给右表的连接属性上添加(+) 表示不存在的话添加空值
+	               右外连接 在Oracle中给左表的连接属性添加(+)  表示保留右表 给左表添加空值
+	       
+	       
+	       
+十二子查询
+    就是在查询里面再嵌套一个select子查询  子查询分为相关子查询和不相关子查询
+    如果内层select使用了外层select的参数,那么就是相关的    
+	    子查询不需要以分号结尾,只需要用小括号()括起来即可     
+	    相关子查询:    
+	    select * from emp e,dept d
+	    where sal=(select min(sal) from emp where deptno=e.deptno )
+	    and e.deptno = d.deptno;    
+
+	    不相关子查询:
+	     select * from emp
+	    where sal > (select sal from emp where empno=7654)
+	    and job = (select job from emp where empno=7788);
+    in  not in(集合或者子查询)   不能带null值
+ ***************************************************************************
+ 	   在Oracle中子查询配合in 或者 not in使用时 子查询里面的结果不能包含null值
+	   因为oracle不支持null和任何类型的比较,那么在判断in的时候由于无法判断和null是否相同
+	   最后无法得到结果 
+	   我们要清楚的是查询出了null值就代表这个集合有东西了  不是一个空的集合
+	   一个空集合和带null值的集合是不一样的
+	   所以我们在查询的时候一定要排除null值 加上判断语句 xxxx is not null
+***************************************************************************
+			   
+	 exists(子查询语句)  当exists里面的查询语句有至少一条结果时,返回true 否则返回false
+	 not exists(子查询在语句)   当not exists里面的查询语句的结果为空集合时返回 ture 否则返回false
+	  由于只需要判断子查询是否有结果,因此子查询语句一般都是select *
+
+	   比如查询有员工的部门的信息
+	   select * from dept d where exists(select * from emp where d.depno=depno)
+*****************************************************************************
+rownum:伪列,系统自动生成的一列,用来表示行号,从1开始,由Oracle提供我们可以直接使用的一个属性列
+	 select rownum,empno from emp;
+	 假如我们想要最后结果的前三条 那么只需要  rownum<=3
+	 但是rownum最好不要去做>的判断,为什么呢?
+	 因为我们都清楚在where判断的时候都是一行一行判断的,而rownum是判断完一行,如果符合条件则rownum++
+	 如果不符合调教
+	 比如条件rownum>2的条件永远不能满足,因为判断第一行的时候,行号是1 1>2不成立 那么继续判断第二行
+	 由于第一行不成立,因此第二行的行号仍然为1 此时继续判断仍然不成立
+ SQL执行顺序:form where group by having select order
+     但是rownum是属性列位于select中,所以它的执行顺序在order前面
+     如果用rownum编号顺序后,再执行order语句,那么会打乱rownum的编号,那么此时直接使用rownum是没有意义的
+     因为添加行号是在排序之前
+     
+     那么排序+取特定行的解决方案是什么呢?
+     我们可以折中一下,因为order影响了rownum,那么我们可以将order by排好序的查询结果 当作另外查询的一个表
+     在这个查询中我们添加rownum ,那么就可以给排好序的查询结果添加行号
+     
+	 select rownum, o.* from (select * from emp order by sal desc) o where rownum <=3;	 
+	 这样就选择出了工资最高的三个人
+	************************************************ 
+	 统计每年入职的员工个数
+	 小技巧:可以使用聚合函数去除带有null的行(仅针对一行不为空值,多行null 的情况下)
+	        比如  year     那么可以通过sum函数或者 变成   year
+		       1987     			     1987    因为聚合函数最后得到一个值 然后将聚合函数取别名					
+                       null 
+		       null  
+	   sum(year) as "year"  这样就可以取消空行 
+	   
+	   
+	   select  to_char(hiredate,'yyyy') year,count(*) num from emp group by to_char(hiredate,'yyyy');
+	   	 year   num
+	   	1987	2      查询出来是这个效果
+          	1980	1
+          	1982	1
+           	1981	10
+
+	   但是我们想要  total  1987 1980 1982 1981   该怎么办呢?
+	   		 14 	 2     1    1    2
+	   
+	   首先total    可以通过  select sum(num) total from  (select  to_char(hiredate,'yyyy') year,count(*) num from emp group by to_char(hiredate,'yyyy')) sub;
+	   	 14        将上面的查询结果当作一个新表进行查询,然后利用case来改变year的别名和数字
+		 *************************************************************************************
+	 显示   1987
+	         2
+		 
+		 select sum(case year when '1987' then  num end ) as "1987" from  (select  to_char(hiredate,'yyyy') year,count(*) num from emp group by to_char(hiredate,'yyyy')) sub;
+		 然后可以使用sum()或者avg函数取消null的行 因为有三行不满足year=1987 那么就会出现null
+	         
+	   合并:
+	   select sum(num) total ,
+	          sum(case year when '1987' then  num end ) as "1987",
+		  sum(case year when '1982' then  num end ) as "1982",
+		  sum(case year when '1981' then  num end ) as "1981",
+		  sum(case year when '1980' then  num end ) as "1980"
+	   from  (select  to_char(hiredate,'yyyy') year,count(*) num from emp group by to_char(hiredate,'yyyy')) sub;   	
+*************************************************************************************************
+	  rownum:伪列 行号 每查询出满足条件记录之后,就会添加一个行号(不管是rownum还是rowid都是可以直接使用的属性列)
+	  
+	  注意在给一个select添加rownum,然后要选择所有属性使用*的时候一定要记住给表别名
+	  比如    select rownum,.e.* from emp e;  
+	  
+	  rowid:表示表中每行数据指向磁盘中的物理地址
+	   应用场景:
+	   create table stu{
+	     name  varchar(20)
+	   }	   
+	   
+	   insert into stu values("龙哥")
+	   insert into stu values("龙哥")
+	   insert into stu values("龙哥")
+	    insert into stu values("老唐")
+	    insert into stu values("老唐")
+	    insert into stu values("老唐")
+	   
+	   怎么删除stu表中重复的列呢? 注意是删除
+	   由于rowid指向了磁盘中的物理地址,因此名字重复的行的rowid一定有一个值是最小的,因此我们只要找到最小的地址 然后将
+	   大于这个地址的行都删了就行
+	   delete from stu s1 where s1.rowid>(select min(rowid) from stu s2 where s1.name=s2.name)
+	   delete from stu s1 where s1.rowid not in(select min(rowid) from stu group by name)
+	   ******************************************************************************************************
+	   
+	   分页查询:
+	   在Oracle中分页查询只能使用rownum实现   mysql使用limit m,n关键字  这里Oracle要麻烦一点
+	   由于rownum不能使用>,所以不能直接在一次查询中实现分页查询
+	   但是我们可以将带了rownum的查询作为一个新查询的表 这样就能行了,这个和排序反着来的
+	   排序是先排序在作为新表  分页是先使用rownum 然后再作为新表分页
+	   
+	   查询emp表的第六到第十条信息
+	   select * from (select rownum as '行号',e.*from emp e) newemp where newemp.行号 between 6 and 10;
+	   这里要注意的是需要给新表的行号取一个别名 
+	   ************************************************************************************************
+	   rowid:可以用来删除重复行                     *****************很重要*******************************
+	   rownum:用来排序取行和分页查询
+	   
+	   查询工资排在6-10的员工的信息
+	   首先要将emp表按照工资排序作为一个子查询表a  
+	   然后对表a查询rownum as "行号"(分页查询一定别名)得到表b  
+	   然后对表b查询行号位于6-10的行    如下
+	    
+	   select b.* from (select rownum as 行号 ,a.* from (select * from emp order by sal desc) a) b where b.行号 between 6 and 10;
+	   *********************************************************************************************************
+	   集合运算:
+	   并集运算:将两个查询的结果合并,重复的只算一条 要求属性列一致
+	   union:除去重复的数据
+	   union all:不除去重复数据
+	   查询1 union(all) union
+	   
+	   差集运算:查询1 minus 查询2
+	   
+	   
+	   
+	   select *from emp where sal > (select avg(sal) from emp where deptno in (select deptno from emp where sal=(select max(sal) from emp))) and sal >(select avg(sal) from emp where deptno in (select deptno from emp where sal=(select min(sal) from emp)));
+	   
+	   
+	   
+	   十三:DDL,DML,视图,PLSQL编程
+	   DDL:数据定义语言
+	   	 Oracle:创建表空间(逻辑单位通常我们新建一个项目,就会新建表空间,然后创建用户,然后用户创建表)  
+		 表空间创建之后必须创建用户
+		 一般来说一个用户默认只有一个表空间
+	   
+	   创建表空间
+	   语法: create tablespace 表空间的名称
+	   	  datefile '文件的路径'(服务器上)
+	   	   size 大小
+		   autoextend on 自动扩展
+		   next 每次扩展的大小
+	   
+	   
+	    create tablespace 神界   这里表空间名字不用引号
+	    datafile 'D:\Oracle\tablespace\shenjie.dbf'  dbf后缀代表数据库文件   数据库文件在我们需要的服务器路径上创建即可
+	    size 100m                                                          可以不用事先创建shenjie.dbf,如果不存在会自动创建,但是文件路径一定要对
+	    autoextend on
+	    next 10m;
+	   
+	   删除表空间语句用 drop tablespace 表空间名
+	   
+		
+	   创建用户
+	   	create user 用户名
+	        identified by 密码
+	         default tablespace 神界;
+	   新创建的用户需要sys授权之后才能登录
+	  
+		grant 角色|权限 to 用户	
+   	
