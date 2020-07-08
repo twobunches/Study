@@ -516,3 +516,468 @@ rownum:伪列,系统自动生成的一列,用来表示行号,从1开始,由Oracl
 	       如果子查询有结果那么会复制表结构和数据,不会复制约束,比如主键,非空等约束
 	       如果子查询没有结果那么只复制表结构,没有数据,也没有约束
 	       
+	       
+	     修改表:添加列  修改列  删除列  修改列名
+	     添加列: 
+	     	 alter table 表名 add 列名 类型 ;
+	     添加多列 
+		 alter table 表名(
+		 add 列名 类型, 
+		 add 列名 类型);    用小括号括起来
+	       修改列:  修改类型 modify
+	       alter table 表名 modify 列名 新类型;
+	       修改列名:
+	       alter table 表名 rename column 旧名 to 新名;
+	       修改表名 rename 表名1 to 表名2;		
+	       删除表:drop table 表名;
+	       
+	       列的约束:
+	       主键 非空 唯一 check 外键
+	       
+	       create table student(
+	       		stuid number primary key,
+			aname varchar2(10)unique
+			age varchar2(10)not null
+			gender varchaer2(4) check(gender in ('男','女','人妖'))
+	       )
+	       
+	       truncate可以用于删除表中所有记录但是保留表结构
+	       
+	       外键约束:
+	       	被外键约束的列,要么为null值,要么这个值必须存在于被参照的表中
+	       添加外键约束:
+		 创建表的时候创建
+			  foreign key references 表名(列名)
+		 创建表之后添加外键约束:
+			  alter table product add foreign key(列名) references 表名(列名); 
+	       	
+		 	
+	         有了外键约束后,我们使用drop是删除不了被参考表的
+		 强制删除:
+		 drop table 表名 cascade constraint ;  这个语句会删除那么参照它的表中的外键约束
+	         
+	          级联删除:
+	       	  需要我们在添加外键约束的时候,使用级联约束
+		   alter table product add foreign key(列名) references 表名(列名) on delete cascade;
+	 *********************************************************************************************************
+	 DML:
+	 插入数据:
+	 insert into 表名 values()  默认插入一行的所有属性
+	 insert into 表名(列) values()  插入一行的某些列 但是非空的列比如插入
+	 
+	 子查询插入数据:
+	 insert into  表名 子查询语句;
+	 更新数据:
+	 update 表名  set ... where...
+	 删除
+	 delete from 表名 where ...
+	 
+	 delete和truncate的区别:
+	 delete      truncate
+	 逐条删除     删除表在创建表(没有数据)
+	 支持事务      不支持事务 不可回滚
+	 ***********************************************************
+	 事务:
+	 在PLSQL中对数据库的更改 DML的操作在执行之后需要我们手动commit
+	 
+	 Oracle隔离级别: read commited serializable,read-only
+	 
+	 提交:commit
+	 回滚:rollback
+	 事务的保存点:savepoint 设置保存点 那么我们在发生异常的时候可以选择回滚到保存点而不是全部回滚
+	 
+	 比如    savepoint  名字;
+	 	 rollback to 保存点名字;
+	*********************************************************************8
+        视图:是由数据库中的表或者视图创建的一张虚表,数据库中只存储视图的结构而不存储视图里对应的数据
+	视图实际上是不存放数据的
+	  用处:
+	 1对复杂查询结果进行封装,封装成一个视图后,可以直接select * from 视图,而不需要再来一次复杂的查询
+	 2屏蔽表中的细节,比如我只想让某个人看到表中的特定列,那么可以查询出这些列然后封装成视图
+	 create[or replace] view 名字 as 子查询 [with read only]
+	
+	 
+	 视图
+含义：虚拟表，和普通表一样使用（可以理解为超大的起别名或封装函数）
+      不保存真实的数据，只保存SQL逻辑
+语法：
+	create view 视图名
+	as
+	select 列名
+	from 表1
+	【连接类型】join 表2
+	on 连接条件
+	【where筛选条件】
+	。。。
+	；
+	
+具备以下特点的视图不允许更新：包含的SQL是指创建视图时的子查询语句SQL,通过什么SQL语句得到的视图
+	1、包含以下关键字的SQL语句：分组函数、distinct、group by、having、union、union all
+	2、常量视图
+	3、select中包含子查询
+	4、join（连接  92 用，）
+	5、from 一个不能更新的视图
+	6、where子句的子查询引用了from子句中的表（from、where用了同一个表）
+	
+视图和表的对比：
+		     关键字		是否占用物理空间		使用功能
+	视图	     view		 占用一小部分（保存逻辑）         增删改查，一般只能查
+	表	     table		  占用				增删改查
+
+	 
+	 
+	 示例:
+	 create or replace view myview as select empno,ename from emp
+	 视图可以增改改查,但是一般只用来查看,通常视图创建的时候加上条件 with read only,而且具备上面特点的不可更新
+	 
+	 同义词:synonym  可以给一个表取另外一个名字
+	 create synonym 同义词名字 for 表名;
+**********************************************************************************
+序列:生成类似于 auto_increment这种ID自动增长的
+	 
+	 语法: 
+	   create sequence 序列的名称
+	   start with 从即开始   (最开始第一次循环开始的地方)
+	   increment by 每次增长
+	   maxvalue 最大值 |nomaxvalue
+	   minvalue  最小值| nominvalue    (最小值是当第一次循环结束后开始的地方)
+	   cycle|nocycle 是否循环 假如达到最大值后是否开始循环 又从最小的开始
+	   cache 缓存的数量  这是指提前在序列中创建好指定数量的数字以供使用
+	   
+	   例子:
+	   创建一个1,3,5,7...30的序列
+	   create sequence seq_test1
+	   start 1
+	   increment by 2
+	   maxvalue 30
+	   cycle
+           cache 10;
+	   
+	   如何获取序列的值:
+	   序列名.currval :当前值
+	   序列名.nextval:下一个值
+	   
+	   注意:currval需要首次调用一次nextval()之后才能使用   因为最开始指向的第一个之前
+	        还需要注意的是调用一个nextval  指向序列中的指针就会变动
+	   
+	   序列最常用的写法:
+	   create sequence 序列名;  默认从1开始 每次增长1 没有最大值 不循环 默认没有缓存
+	   序列可以用于给一个我们希望自动增长的列赋值  使用序列名.nextval 进行值得插入
+	   比如 insert into stu(stu id,stuname) values(序列.nextval,'龙哥');
+**********************************************************************************	   
+ 索引:相当于一本书的目录,可以提高查询效率	   
+      我们可以对那种频繁使用的列上创建索引,那么创建之后我们再去查询的时候效率就比较高
+      但是适用于数据量大的数据库,数据不多的话没必要
+      语法:create index 索引名 on 表(列1,列2....)   多列的话就是复合索引   单列就是单列索引
+      注意:主键约束自带主键索引 唯一约束自带唯一索引
+      
+						  ********Oracle中SQl拼接字符串使用||**************
+						  比如 inser into table1 values('姓名'||'i','地址'||'i')
+						  这里将字符串拼接了一个字符串i,在PLSQL也可以拼接变量
+  
+    	 
+  我们在进行查询的时候,select是最后的投影,这个不是关键
+  关键是where子句中 根据什么样的条件查询的
+  如果我们根据某一列来查询比如  name="xxx"  那么我们可以在这一列上加上单列索引create index 索引名 on 表(列1)
+  如果条件是多列的  那么我们需要添加复合索引create index 索引名 on 表(列1,列2....)
+   **关键点**
+   因此我们建立索引是根据where子句中频繁使用的列来建立索引的,频繁使用单列就创建单列索引, 频繁是使用的多列创建复合索引
+	 
+	 
+ 索引的原理:为什么添加索引可以加快查询速度
+ 	1btree
+	2平衡二叉树
+		
+  
+  如果是没有创建索引的情况下,我们需要一行行的查询,然后从每一行的数据取出条件列的数据来检查是否满足条件
+  
+  而建立了索引之后,那么会将索引所在列单独拿出来建立一个树  然后我们查询的时候是先去查询这个树
+  比如将name列排序后形成一个平衡二叉树,然后二分查找name="龙哥",找到之后再根据指针找到name="龙哥"所属行
+ 
+  索引也有缺点:当我们更改表的时候,也需要去更新索引
+ *************************************************************************************
+ PLSQL编程: procedure language 过程语言
+  让我们能够像再java中一样写if else  仅仅在PLSQL中
+  
+  	declare
+  	 ----声明变量
+ 变量名 变量类型;
+ 变量名  变量类型:=初始值;
+ 变量名  表名.列名%type;  引用型变量 用这个方式可以申明一个类型和xx表名.列名同类型的变量  用来装单个查询数据的  通过(select 列名 into 变量 )来装取
+ 变量名  表名%rowtype;   申明记录型变量 用来装1行中所有查询数据
+	   --逻辑
+	 end;
+ 
+ 
+ 
+ declare 
+ 	i varchar2(10):='张三';
+ begin
+ 	bdms_output.put_line(i);
+ end;
+ **************************************************************
+ PLSQL的作用是用来在Oracle更方便得编写SQL语句以及封装函数以供java直接调用
+ *************************************************************8
+ 条件判断
+ 	 if then 
+	 elsif then
+	 else 
+	 end if;
+ 
+ 循环操作:
+  while循环:    while循环的循环变量需要在declare中定义
+
+	  while 条件 loop
+	  循环体
+	  需要添加自增条件 i :=i+1; 在PLSQL中赋值符号是:=
+	  end loop;
+  
+  for循环:
+  
+	  for 变量名 in [reverse]起始值..结束值 loop  (for循环的循环变量不需要定义  reverse可以用于循环变量倒序取值)
+	  循环体
+	  end loop;
+
+  
+  
+  
+  loop循环:
+	 loop
+	  exit when 条件;  设置退出条件   循环变量要提前申明(可以位于loop 和 end loop的任意位置)
+	  循环体 
+	  end lop;
+	 PLsql输出菱形:
+	  begin
+   
+    for i in 1..3 loop
+        for j in 1..(3-i) loop
+            dbms_output.put(' ');
+        end loop;
+        for j in 1..(2*i-1) loop
+            dbms_output.put('*');
+        end loop;
+            dbms_output.put_line('');
+    end loop;
+     for i in reverse 1..2 loop
+        for j in 1..(3-i) loop
+            dbms_output.put(' ');
+        end loop;
+        for j in 1..(2*i-1) loop
+            dbms_output.put('*');
+        end loop;
+            dbms_output.put_line('');
+    end loop;   
+ end;
+ 
+ 
+ 
+  java中输出菱形: (这个思路也使用于PLSQL)
+    传统方法是两层循环,内层循环打印*和空格的次数根据外层的层数而定,也就是j和i有关,还和层数n有关
+    但是有个简单的方法,将菱形看成一个n*n的二维数组,因为打印的这个菱形本身就是一个正方体
+    然后根据abs(i)+abs(j)<n/2   也就是线性规划|x|+|y|<=m  表示在菱形内部  >2表示在外面  通过这种方式判断二维数组的每个元素该怎么打印
+    但是这里并不是说二位数组的下标从-n开始 ,而是循环的初始值从-n开始到n
+    
+    n层的菱形 应该从-n/2到n/2  
+    
+  	public void  demo1(){
+		int input;
+		Scanner sc=new Scanner(System.in);
+		System.out.println("输入菱形的层数:");
+		input = sc.nextInt();
+		int n = input/2;
+		for(int i = -n;i<=n;i++){
+			for(int j=-n;j<=n;j++){
+				if(Math.abs(i)+Math.abs(j)<=n){
+					System.out.print("*");
+				}else{
+					
+					System.out.print(" ");
+				}
+			}
+			System.out.println("");
+		}
+	}
+ 
+ ********************************************************************************************
+ 游标:
+    是用来操作查询结果集得,相当于jdbc中得ResultSet
+    定义:游标是系统为用户开启得一个临时数据缓冲区,用于存放sql语句集,用户可以用过用表逐一读取数据记录,然后赋值
+    给变量 比如PLSQL中得引用行变量 或者记录变量
+    
+    为什么需要游标?
+    由于主语言是面向单值得,我们每次只能读取一行数据 然后赋值给变量 再交由主程序使用 然后一个SQL语句产生得结果
+    可能是多行数据,那么此时因该为这个结果集开启一个游标,通过游标读取数据赋值给记录型变量  vrow  %rowtype
+    
+    如果结果集只有一行得话 我们可以通过select 列名 into 引用型变量完成  或者select *  into 记录型变量 
+    但是如果是多行的话,要在函数或者存储过程中读取sql结果集必须开启游标
+    
+    
+    语法:cursor 游标名 is 查询结果集
+    步骤:
+    1声明游标  cursor 游标名(参数名 参数类型) is 查询结果集(子查询结果)
+    2打开游标  open   游标名
+    3从游标中取数据  fetch 游标名 into 变量  fetch相当于next  读取下一行记录 因为一开始处于第一行之前
+    		游标名%found   当前行数据存在时返回true     这个适用于while循环
+		游标名%notfound  当前行数据不存在时返回true   这个适用于loop循环
+		这两个可以又来判断游标是否
+    4关闭游标  close 游标名
+ 	 
+	 
+	 例子:
+从emp表中输出所有员工的姓名和工资,在PLSQL中输出,不是通过select
+	declare
+	      cursor vrows is select * from emp;    声明游标
+	      vrow emp%rowtype;     声明记录型变量装取数据
+	begin
+	open vrows;
+	 loop    循环读取游标中的数据
+	  fetch vrows into vrow;
+	  exit  when  vrows%notfound;
+	  dbms_output.put(vrow.name||vrow.empno);
+	  end loop;
+	  close vrows;	
+	end;
+
+带参游标的声明:
+	cursor 游标名(参数名 类型) is 结果集(结果集中需要用到这个参数)
+        因为可能有时候结果集不定,所以此时游标可以带上参数
+        我们打开游标的时候就可以赋上参数,这样就不必写死了
+        比如: open vrows(5);
+	根据传入的参数生成相应的结果集,然后开启游标
+	也就是说参数实际上供给结果集使用的
+	
+示例:输出指定部门的员工的名字和工资   由于部门不定,所以结果集也不定,需要游标传递参数,参数和查询时的类型要一致
+定义游标的时候需要定义参数,供结果集使用
+
+	declare
+		  cursor vrows(arg number) is select * from emp where deptno=arg;    
+		  vrow emp%rowtype;     
+	begin
+	open vrows(10);
+		  loop    循环读取游标中的数据
+		  fetch vrows into vrow;
+		  exit  when  vrows%notfound;
+		  dbms_output.put(vrow.name||vrow.empno);
+		  end loop;
+		  close vrows;	
+	end;
+	
+	
+	
+系统引用游标:Oracle 提供的一种类型 sys_refersor    
+	直接通过声明游标:   游标名 sys_refersor;  这样就声明了一个游标 ,只不过没有结果集,它是空的
+	打开系统游标:  open 游标名 for 结果集;
+
+	其他取数据,关闭都是一样的;
+	
+	
+使用for循环遍历游标:(一中简单的方式)
+declare
+	 cursor vrows is select * from emp;    声明游标
+ begin
+ 
+ 	for vorw in vrows loop
+	
+	
+	end lopp;
+ end;     使用for循环遍历的话我们不必手动打开、关闭以及取数据了,Oracle底层帮我们完成了这些操作
+	   而且使用for循环我们也不需要声明一个变量去装数据,oracle 我们完成了    
+	       
+	       
+游标的应用:通过游标读取结果集,然后根据数据做if判断,然后可以编写sql语句去改变真实的表,虽然我们不能改变游标里面的缓冲数据
+但是可以使用sql语句去改变真实表中的数据
+
+
+PLSQL中的异常(例外):
+declare
+	
+begin
+
+exception
+when 异常1 then
+when 异常2 then
+
+when others then   当我们不区分异常的时候 直接写 when  others  then 执行语句
+end;
+  这里指方发生异常后,就执行exception中的语句
+  zero_divide  除0异常
+  value_error  类型转换
+  too_many_rows: 查询出多行记录 但是赋值给了rowtype类型的变量 或者%type
+  no_data_found:没有查到数据但是却赋值给了一个变量
+                    单行数据赋值通过的是 select * into 变量 而不是:=号  这个要记住
+  		     多好数据是通过打开游标  然后fetch 游标名 into 变量; 通过这个sql语句从有游标取出一行数据
+		  单行数据赋值:   
+		  row emp%rowtype; 
+		  select * into row from emp where empno=xxxx;
+		  单属性赋值:
+		  vsal emp.sal%type;
+		  select sal into vsal from emp where empno=xxx;
+		  多行:
+		  cursor rows is select * from emp;
+		  open rows;
+		  fetch rows into row;  这里可以循环从游标取值 通过 rows%found  或者rows%notfound判断
+		  close row;
+		  
+自定义异常:
+异常名 exception;
+raise 异常名;  在我们希望的地方抛出异常,抛出异常后我们就可以在 exception-end之间的语句体之间捕获异常
+
+declare 
+	vrow emp%rowtype;
+	no_emp exception;
+begin
+	select * into vrow fron emp where empno="8888"	 //其实这里就抛出了一个系统的异常  no_data_found的异常 并不能走到我们的自定义异常
+	if vrow.sal is null then 
+	 raise no_emp;          我们这里判断是否获得员工是不是空的,如果是空的就抛出异常,然后就可以在下面捕获异常
+	 end if;
+excpetion
+	when no_emp then
+	 dbms_output.put_line('输出了我们自定义的异常');
+end
+		  
+  如何绕过系统异常而抛出我们的异常呢?
+  通过游标!!!  我们可以将查询的结果开启游标 然后使用  游标%found  或者游标%notfound
+declare
+vrow emp%rowtype;
+  cursor vrows is select * from emp where empno='88898' ;
+  no_emp exception;
+begin
+   open vrows;
+   fetch vrows into vrow; 移动光标到第一行(fetch用来移动光标到下一行并且取出数据,数据不存在的时候也不会出错)  
+  if vrows%notfound then    判断数据是否存在    当光标位于初始位置(第一行之前)的时候, 游标%notfound默认是 false的 也就是说默认情况是存在数据的 这个要清楚
+   raise no_emp;  
+  end if;  
+   close vrows;
+exception
+   when no_emp then
+   dbms_output.put_line('没有找到员工,输出了我们自定义的异常');
+end;
+  
+    
+
+*************************************************************************
+关于Oracle中游标注意的点:
+ fecth是将光标移到一下行并且取出下一行的值 然后赋值给变量,如果下一行的值不存在,赋值给变量不会报异常,变量的值仍然是之前的值
+ fetch的功能有两个  一是移动光标到下一行 而是取下一行的值赋值给变量
+ 只有这种情况会报no_data_found的异常 :从select中查询值 然后赋值into给变量,若结果为空,会异常
+ 
+ 
+ 游标%notfouund 游标%found 是判断的游标当前行是否存在值
+ 如果当前是起始行(第一行之前)  游标%found默认是true的  游标%notfouund默认是false的
+ *******************************************************************
+
+
+
+
+
+
+
+
+
+
+
+
+	       
+	       
+	       
+	       
