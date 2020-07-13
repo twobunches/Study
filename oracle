@@ -965,19 +965,188 @@ end;
  游标%notfouund 游标%found 是判断的游标当前行是否存在值
  如果当前是起始行(第一行之前)  游标%found默认是true的  游标%notfouund默认是false的
  *******************************************************************
+存储过程:
+  封装好了的SQL语句,并且是已经编译了的代码
+    1执行效率高,因为已经编译好了,不需要再调用的时候编译
+    Oracle 中定义存储过程中的语法:
+    
+    create[or reolace] procedure 存储过程的名称(参数名 in|out 参数类型)
+    is | as
+    	 声明部分;
+    begin
+    
+    end;
+    
+    in out指的是 这个参数是输入参数还是输出参数 
+    输入参数是我们要传进去得值
+    输出参数相当于在外面创建然后传入的一个用来装函数需要返回值得变量   简单点来将输出参数是用来装我们想要返回的值
+    在java中相当于我们创建一个变量通过赋值的方式来获得函数的返回值
+    而存储过程则是在调用的时候传入输出参数在存储过程内部来获得返回值
+    
+    
+    实例:创建一个获得根据编号获得年薪的存储过程
+    create or replace procedure pro_getsal (vempno  in number,vtotalsal out number)
+    is
+    
+    begin
+    	select sal*12+nvl(comm,0) into vtotalsal from emp where empno=vempno;
+    
+    end;
+    
+    当我们定义完存储过程后,点击执行,该存储过程就会保存到oracle数据库的当前用户下
+ oracle中调用存储过程:
+  方式1: call  存储过程名字;   通用
+  方式2: 在PLSQL的语句体中可以直接调用存储过程名字,不需要使用call;
+*******************************************************************
+    存储函数:同样也是经过封装的sql语句,也经过了预编译
+    创建语法:
+	 create[or reolace] procedure 函数的名称(参数名 in|out 参数类型.....) retuen 参数类型
+	    is | as
+		 声明部分;
+	    begin
+
+	    end;
+   create or replace function pro_getsal (vempno  in number,vtotalsal out number) retuen number
+    is
+     vtotalsal number;
+    begin
+    	select sal*12+nvl(comm,0) into vtotalsal from emp where empno=vempno;
+    	retuen number;
+    end;		    
+	    
+ 这里可以看出函数与java中没区别,通过return返回值,在函数内部定义变量,返回这个变量
+ 存储过程如果需要返回值的话是通过传入输出参数,在存储过程内部对这个输出参数赋值实现返回值的
+	    
+  存储过程和函数的区别:
+  1他们本质没有区别
+  2函数存在的意义是给过程使用的
+  3函数返回值或者表对象,因此可以作为子查询或者from字句后面,而存储过程一般是单独调用,比如在java中调用
+  4函数可以在sql语句中直接调用  
+  注意在Oracle中计算不出一个null值+任意类型的值 所以在加的时候一定要注意使用nvl()函数去判断null值
+*******************************************************************
+java中如何调用存储过程?  就是jdbc那一套
+1导入驱动
+2注册驱动
+3获取连接
+4获取执行sql的statement
+5封装参数
+6执行sql
 
 
-
-
-
-
-
-
-
-
-
-
+在java中连接Oracle的相关设置
+驱动名:oracle.jdbc.drive.OracleDriver  对比  mysql的驱动名 com.mysql.jdbc.Driver
+url: jdbc:oracle:thin@ip地址或者localhost:1521:orcl; oracle 中只有一个数据库实例 orcl
+用户名:
+密码:  
+oracle登录的是orcl数据库中的不同用户
+mysql连的是一个用户下的不同数据库
 	       
-	       
-	       
-	       
+*注册驱动
+Class.forName("oracle.jdbc.driver.OracleDriver"); // DriverManger.registerDriver();
+conn= DriverManger.getConnection(参数1,参数2,参数3); url  用户  密码
+conn.preparestatement()  返回执行sql语句的对象
+conn.preparestatement()   返回执行存储过程的对象
+
+conn.preparecall();返回一个callablestatement对象  用于执行sql存储过程的接口,通过preparecall()获得对象
+这里的prepacecall和prepacestatment()一样,都是为了防止sql注入预先预先给statement定义一个sql语句 关键地方用?代替
+然后通过statement对象给参数赋值然后执行
+
+*比如conn.preparestatment("select * from emp where empno=?");	
+通过statment.set(1,...);给预定义的sql语句中的问号?赋值  这样就起到了防止sql注入的目的
+
+conn.preparecall(arg)  参数arg是一个字符串  
+字符串格式:  "{call 存储过程名字(?,?,?.....)}"  ,问号用于代替参数,如果参数固定可以不用问号,问号方便之后通过set赋值 ,防止sql植入
+对于存储过程参数有in和out的区别
+in参数使用set系列方法赋值  
+out参数则必须注册且在语句中必须用?代替,在执行完存储过程后可以通过get取出这个值 
+注册之后jdbc会创建一个变量传入存储过程
+注册方式: 调用方法  state.registerOutParameter(参数索引,参数类型);  OracleTypes.xxx
+
+执行:state.execute();
+
+获取out参数的值
+state.getxx(out参数的索引);  这里相当于得到 jdbc自己创建的那个输出参数的值
+*****************************************************
+jdbc调用存储函数
+Class.forName("oracle.jdbc.driver.OracleDriver"); // DriverManger.registerDriver();
+conn= DriverManger.getConnection(参数1,参数2,参数3); url  用户  密码
+statement = conn.preparecall(arg);
+调用存储函数的字符串格式
+arg="{?=call 函数名(?)}"  这里多了一个?=   代表返回值
+这里的第一个问号代表的是返回值
+
+函数返回值和存储过程的输出参数一样需要注册,然后再执行完后通过get得到
+statement.registerOutParameter(1,返回值类型);   注册返回值
+statemetn.set(xx,xxx)  给函数的in参数赋值
+statemetn.execute();
+statement.getxxx(返回值所在问号索引);
+
+************************************************************
+触发器:当用户执行了 insert|update|delete这些操作之后,执行的一系列操作
+
+      创建语法: create [or replace] triger 触发器名称
+       before | after
+       insert|update|delete
+       on 表名
+       [for each row]  是否对每一行数据执行触发器
+	declare
+	
+	begin
+	
+	end;
+当我们定义完触发器后,点击执行,该触发器就会保存到oracle数据库的当前用户下
+
+触发器分类:
+
+语句级触发器:  不管影响多少行,都只会执行一次
+在语句级触发器中不能使用:new 和:old  因为影响多行 但是只执行一次  
+
+行级触发器:影响多少行,就触发多少次
+ 当我们加了for each row后 就是行级触发器  触发触发器的语句影响了表多少行就执行多少次触发器语句
+ 由于行级触发器是被影响的每一行都会执行触发器,因此行级触发器的语句体中可以使用 :old 和:new
+  :old 得到更新前的那一行数据   :old.属性名
+  :new 得到更新后的那一行数据  :new.属性名
+
+想要拿到被影响行数据就要加 for each row
+
+
+*********************************
+使用触发器模拟MYsql中的id自动增长:
+在mysql中我们对于自动增长的列可以使用 insert into table valuse(null,),在定义了自动增长的情况下可以使用null值,
+在Oracle中这样写可以嵌入null值,但是不能自动增长,前提是该列允许为空,如果定义了非空 使用null会报错
+
+那么我们要怎么才能实现这样一个功能并且不报错呢?
+那就是触发器,我们编写一个触发器在插入之前 执行  然后使用 :new.属性 给需要自动增长的属性列赋值即可  从序列取值
+create table stu(
+	sno number not null,
+	sname vachar2(10)
+);
+create sequece id_seq;
+
+create  trigger tri_stuid 
+before insert
+on stu
+for each row
+declare
+begin
+select  id_seq.nextval into :new.sno from dual;   或者这种方式   :new.sno :=id_seq02.nextval ;      前面一直是通过select into的方式赋值,需要一个虚表dual,后面是直接赋值
+end;
+
+这里是定义触发器,然后在插入之前执行触发器, 使用:new.sno引用被影响行sno属性的值,然后给它赋值序列中的下一个值 
+
+对于插入操作而言是没有 :old值的 对于删除操作是没有:new值的
+只有更新要同时有:old 和:new
+
+还有要注意的是 :old 和:new不只是引用表的行值, 我们通过它们可以直接更改表中该行的数据,所以才能通过:new.属性 来实现自动增长
+
+为什么对于非空的列我们插入null不会报错呢?
+因为我们定义触发器在插入之前操作,然后通过:new给插入之后的该行属性赋值了 所以当插入时该属性已经不是空值了
+这里可以理解为 通过:new.属性 改变了我们插入语句中对应属性的值,然后在后面的插入操作就不会报错且能够实现id的自动增长
+为什么不在插入之后执行触发器呢?因为执行插入之后监测为null就会报错,根本就不会执行触发器
+
+
+注意:*******************************************************
+ :new. 只能改变before 类型的触发器,也就是说:new引用即将改变的值 ,在执行sql语句之前更改  ,然后再执行sql语句,其实:new改变的是sql语句中 相应列的值
+ :old  只能改变before类型的触发器
+
+
