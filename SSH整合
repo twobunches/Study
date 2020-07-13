@@ -98,7 +98,7 @@ hibernate核心jar- 在hibernate解压包下的lib/required中的jar包是必须
         然后这个Dao类就有了 hibernateTemplate以及sessionFactory这两个属性 以及相应的set方法
         我们只需要给Dao植入sessionFactory那么 setsessionFactory()这个方法会帮我们生成hibernateTemplate对象
         
-        然后就可以使用hibernateTemplate模板进行CRUD了
+        然后就可以使用hibernateTemplate模板进行CRUD了  注意:在dao中要使用this.getxxtemlate()  因为继承的父类daosupport中这个属性是私有的,必须用过get方法获得
        
        配置事务管理器(注意进行事务管理还是需要Spring-jdbc包和Soring-tx包的,不管底层是jdbc还是hibernate都需要这两个包)
         <bean id="txmannager" class="hibernateTransactionManager">
