@@ -9,8 +9,8 @@ java提供了一系列的接口 比如DriverManager connertion接口
 然后创建java项目
 1注册连接驱动
 DriverManager.registerDriver(Driver);
-这里面的参数要求传入一个实现了java中Driver接口的类
-在mysql的库中 有一个Driver类实现了这个接口  
+这里面的参数要求传入一个实现了java中Driver接口的类  比如Mysql的驱动类 com.mysql.jebc.Driver 这里的Driver就是实现了driver接口的类
+在mysql的库中 有一个Driver类实现了这个接口         Oracle中的  oracle.jdbc.driver.OracleDriver  前面的包名 后面是类名 因为是大写的
 因此  导入这个类  
 然后new Driver() 即可
 DriverManager.registerDriver(new Driver());
