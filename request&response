@@ -48,7 +48,7 @@ getRealPath这个方法只能得到webcontent下文件的绝对路径
 
 getResourceAsStream(""); 这个方法默认得到这个web项目的根目录的流对象
 和上面类一样型 指定webcontent(java中的显示)或者说是web项目根目录文件下的文件可以得到该文件的输入流
-getResourceAsStream("properties");
+getResourceAsStream("properties"); 比如在web项目下的properties文件
 
 对于这两个方法  它们的参数都是一个相对路径 它们参照的对象时web项目的根目录
 比如在we工程的根目录下放一个file文件夹里面有一个xml文件
@@ -61,8 +61,8 @@ new SAXReade().read(is);
 
 
 还有一种通用方法
-Class类的get...但是这个方法的参照起始路径是根目录下web-inf下的classes文件
-所以需要使用两个../../在去填写相对路径
+Class类的get...但是这个方法在javaEE中的参照起始路径是根目录下web-inf下的classes文件   在java中参照的路径是src文件夹
+所以需要使用两个"../../我们想要得到的文件名"在去填写相对路径  ../../表示从当前的相对路径返回到web根目录下
 
 3.用servletcontext类(获取/存数据)
 这里的获取指的是获取从http请求中带的数据
