@@ -1,0 +1,114 @@
+1区分文件和目录
+  文件是目录最后一级中的数据,能够直接使用,目录相当于文件夹
+
+2对于输入流来说,如果文件不存在,那么就会报错
+ 对于输出流来说,如果文件不存在,那么输出流会创建同名的文件,然后write数据
+ 但是要注意如果该路径下的目录,也就是文件加不存在,那么会报错
+ 比如  new FileOutputStream(new File("password\美女.jpg")); 
+ 这是相对路径形式,如果当前路径下没有password目录,那么就会报错,输出流能创建文件但是不能创建目录
+ 
+ 
+ File类,file对象是文件和目录路径名的抽象表示形式, 也就是说不管用什么样的路径都能成一个file对象,不存在的路径也可以
+ 
+ 但是在实际使用这个file对象时,如果file对象表示的抽象路径不存在时,会出现一些问题
+ 
+  File对象重要API   exists()  这个方法可以判断file表示的抽象路径的目录或者文件是否存在  如果存在返回ture 不存在返回false
+                    createNewFile() 当file表示的抽象路径的文件不存在时,创建一个新文件,要注意的是,这个方法只能创建文件,
+                                    如果这个文件的上级目录不存在时,就会报错,无法创建文件,需要先创建父级目录
+                                    比如路径"one\two\美女.jpg",由于当前路径下one\two\不存在,所以无法创建美女.jpg文件
+                    mkdir()创建file抽象路径的目录,但是该方法只能创建最后一级目录,注意该file对象表示路径只能是目录而不是文件
+                    mkdirs()创建file抽象路径的目录以及所有必须的父目录
+                    getParentFile()返回file抽象路径所表示上一级目录   比如 "c:\\one\two\美女.jpg"的上一级目录就是"c:\\one\two"
+              
+              
+                   通常对于某个路径下的文件来说,我们要写入数据,首先File对象判断该文件的父目录是否存在,如果不存在则调用mkdirs()
+                   然后直接使用输出流自动创建文件,当然也可以使用createNewFile()创建文件
+  
+  
+  路径问题:在javaSE中使用File相对路径,起始默认路径是java project文件下
+            在java开发中字符串路径中,反斜杠\是特殊字符,不能够直接写在字符串中的,要使用反斜杠需要使用转移字符\\  和\n \t \b \f \' \"类似 \\在字符串中代表反斜杠
+            而路径符一般来说就是斜杠/  当然路径符号也可以使用反斜杠\,但是在java里面反斜杠必须使用\\才能正确显示 比如 C:/xxx/xxx或者"C:\\xx\\xx\\" 在java中要这样写才能正确读取读经
+            
+           在javaee中不要使用File去获得某个文件的抽象路径,file不能正确读取相对路径,但是可以使用file去读取绝对路径
+              三种方式: 1:通过class类的classloader 的getresourceassream("文件的相对路径")可以得到文件的输入流
+                           参数是文件的相对路径,而这个方法的相对路径起始默认位置参照的是web根目录下的web-inf/classes  因此如果想要得到web项目中的某个文件
+                           则路径要加上../../返回根目录然后+路径  比如"../../图片/xx.jpg"  这样的方式 
+                           
+                         2通过servletContext对象的方法 这个类通过request.getsession.getsevletcontext()  或者通过this.getservletconfig().get...得到
+                             getrealpath()  这个方法可以得到文件的绝对路径   参数是文件的相对路径
+                             这个方法默认起始位置参照的是web根目录  
+                             如果不加参数得到的就是web项目的绝对路径     有了绝对路径就可以使用File类和流类去进行相关操作
+                             如果加了参数 比如 getrealpath("美女.jpg")  会得到web项目下这个图片的真实路径,前提是存在该文件
+                            
+                             getresourceasstream()  和上面一样,只不过得到的是文件的输入流.文件必须存在
+                             
+                  如果是读取web工程大的资源三个方法都可以,如果是想要往web工程中添加文件,则先使用getrealpath()得到web项目绝对路径,然后使用File类操作
+                  可以在web项目绝对路径上拼接一个目录 然后mkdirs()   然后再拼接文件名,创建或者不用创建  然后开启输出流 输出文件
+                             
+                      
+3HttpClient
+   第三方开发的Jar包,这个类可以模拟浏览器客户端,然后可以模拟get和post请求,并且得到响应数据
+   
+   
+   
+4Maven的使用 eclipse
+  新建项目 other 选择maven project  
+  一直下一步, 
+  group ID  是这个maven模块所属的组id  一般就是一个包名  比如 com.study
+  artifact ID 相当于这个模块或者项目的名字
+  version:该元素定义jar包的版本,类似于身份证号,啊
+   
+   maven最重要的好处:
+   1依赖管理,里面有一个很重要的文件POM.xml  pom是项目对象模型
+   maven将项目当作对象来管理
+   在maven project中只要在pom中引入了项目所需要的依赖 就不需要jar包了
+   我们只需要去搜索相应jar包的依赖 然后添加进pom的的dependence标签中 
+ 
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>5.2.7.RELEASE</version>
+    </dependency>
+    可以看出我们在创建mave项目的时候也需要输入groupId  artifactId version  说明了到时候我们的模块整合其他人的模块只需要将我们的模块上传到私服
+    然后其他人只需要在pom.xml中输入我们相应的坐标就可以找到我们的项目
+    
+    同理java所需要的各种依赖在maven仓库中也有想用的组名 项目名以及版本号  我们只需要给出左边就能够找到依赖,由于这些依赖建立了索引,所以搜索极快
+    和导入jar一摸一样 前提是需要联网
+   MavenRepository 在这个网址搜索依赖
+  
+  2一件构建
+    可以将maven的项目一键编译,测试,运行,打包,部署到tomcat目录上去,然后开放访问
+    在cmd命令行下  进入maven项目所在文件 mvn tomcat:run
+   
+   
+   
+  5maven的安装 
+   下载然后解压缩到一个没有空格和中文的路径下
+   
+   配置环境变量:由于maven里面有提供了一些命令脚本比如mvn一键构建等
+   
+   关于java的环境配置:  设置JAVA_HOME=jdk文件夹的路径  在path系统变量里面添加值  %AVA_HOME%\bin  %AVA_HOME%\jre\bin 
+    或者不需要java_home变量  直接在path环境变量里面直接添加 jdk\bin  或者jdk\jre\bin 的全路径即可   因为java_home就是用来简写path里面的路径的
+   java不是免安装的,需要去安装之后然后配置环境变量,而eclipse是免安装的.  
+   
+   path环境变量是什么意思:比如我们在cmd窗口中敲命令 起始是运行某个程序,但是有个必要条件就行,我们必须要在这个程序所在的文件夹下才能直接运行这个程序
+                          那么怎么才能不进入这个程序所在文件夹而运行程序呢? 这就是path环境变量了,只要把路径添加进path环境变量,那么我们运行程序比如java
+                          回优先从path环境变量的所有路径中一个一个地去找这个程序,所以配置java_home变量就是在path用%%来引用,也可以不设置,直接在path里面添加全路径即可
+                   
+   
+   
+   Maven的环境变量配置:
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
