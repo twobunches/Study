@@ -82,7 +82,7 @@
    
    
    
-  5maven的安装 
+  5maven的安装   maven是免安装的
    下载然后解压缩到一个没有空格和中文的路径下
    
    配置环境变量:由于maven里面有提供了一些命令脚本比如mvn一键构建等
@@ -98,17 +98,253 @@
    
    
    Maven的环境变量配置:
+   添加环境变量:MAVEN_HOME=macen的解压缩地址
+   将环境变量添加进系统环境变量 path中去 %MAVEN_HOME%\bin
+   
+  
+  5Maven的仓库与配置
+    本地仓库:本地存放jar包的目录
+    远程仓库(私服):私人搭建的服务器  一般在企业内部局域网中使用
+    中央仓库:maven内置了一个远程仓库的地址,这就是中央仓库,这是由apach维护的
+            访问呢的url可以从
+          
+           1. http://mvnrepository.com/ （本人推荐仓库）
+           2. http://repo1.maven.org/maven2
+      下载jar包或者mvn依赖可以去这两个网址
+   
+   
+   
+   maven怎么找jar包的, 先从本地仓库找-然后如果有私服的话会去私服找-私服中没有就会从中央仓库下载到私服 然后maven会将jar包从私服下载到本地仓库
+   如果有网才能从中央仓库下载,但是不论怎么样最后maven都会把jar下载到本地仓库
+   
+   比如我们在pom中加入项目依赖,然后会先去本地仓库找这个jar包,如果不存在xxxx和上面一样
+   不是说maven项目不需要jar包,只是我们在使用maven项目的时候不需要手动导入jar包,只需要在pom配置依赖,然后maven会去找依赖
+   当我们需要某个依赖的时候,需要在pom.xml中引入该依赖,然后maven才会去仓库查找对应的jar包,然后引入项目
+   
+   
+   6Maven项目的标准目录结构规范
+   里面src/main/java  中放的是项目的源码  src/main/resource 放的是项目的 配置文件 
+      src/main/webapp放的是页面素材   webapp里面有  WEB-INF文件夹 /web.xml文件以及lib文件夹   可以把这个webapp规范看成tomcat工程下webcontent目录
+      
+     src/test/xxx  放的是测试相关东西 
+      
+   在maven中src和pom.xml是同级的
+   
+   7Maven 的基本命令
+   mvn命令        参数有以下 在一个java项目或者Maven_web项目根目录下执行以下命令  不需要指定文件名-自动监测  但是需要在项目根目录下执行该命令
+                  
+   1mvn clean     清楚target目录及其目录中所有文件
+   2mvn compile   将src/main/java中的源代码编译成class文件
+   3mvn test      运行测试用例  运行src/test/java下的java文件
+   4mvn package   打包命令  会将java项目打包成jar包    一般会打包在target目录中
+   5mvn install   将当前maven项目部署放到本地仓库中,这个命令做了上面所有操作
+   
+   指令的生命周期 当后面的指令执行后前面的指令也会执行
+   
+   
+   8eclipse配置maven(建议使用mars2)
+   
+  1配置maven插件,高版本自带 
+   
+   Ⅰ添加本地maven
+   点击window-preference-maven-installtion  点击add添加电脑上maven的解压缩包
+   
+   Ⅱ配置本地仓库  
+   首先修改setting文件
+      在maven安装路径下/cong/setting.xml中配置标签
+      <localRepository>本地仓库路径</localRepository>
+    这个仓库其实里面装的就是我们自己下载的一大堆jar包
+   点击window-preference-maven-usersetting 
+   修改usersetting选项    将maven路径下conf文件下的setting.xml添加进去即可,因为maven的本地仓库就是在这个xml中配置的,只需要加载这个文件就行了
+   
+   Ⅲ定时的去重构索引 加快jar包的查询速度
+      点击window-showview-other  搜索mavenrepository  在下面的一个栏目里 对localrepository中的所有jar点击右键重构索引
+   
+  
+  9使用maven创建工程
+   在eclipse中选择创建其他项目,搜索maven项目,然后选择打包类型的时候有jar  和 war 和pom
+   如果我们这个项目是一个简单的java工程 选择 jar  如果是一个web工程就是war
+   pom是指 分模块开发的时候选的类型
+   
+   会出现几个问题:
+   **********************************************************************************************************
+   当我们不用eclipse自带的maven插件,而是自己的,当配置好maven本地仓库后,由于仓库里面没有东西,所以在创建maven时会出错
+   这是需要在conf文件的setting.xml中的镜像标签下 
+   
+   添加<mirror>
+        <id>nexus-aliyun</id>
+        <mirrorOf>*</mirrorOf>
+        <name>Nexus aliyun</name>
+        <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+      </mirror>
+   由于高版本的MAVEN中央库是repo1.maven.org，这个库联通性不是很好，所以在监测本地没有相关依赖时就会去中央仓库下载,但是网络不好的话一时间又无法下载完成
+   这时候就会报错,因此加入这个镜像的目的就是提供另外一个镜像,提示maven可以从这个路径下去下载相关依赖
+   
+   这个镜像的下载速很快***
+   *******************************************************************************************************************
+   
+   当解决以上问题后,新建的maven项目还是要报错,原因是webapp文件中没有WEB-INF文件以及web.xml文件 
+   方法:
+   1手动创建这个weinf文件夹以及xml
+   2点击项目右键-javaee Tools-generate deployment descriptor stub
+      这个可以帮我们自动生成标准的web目录 (建议使用这个)
+   *********************************************************************** 
+   ***调整maven工程中的JDK版本:maven自带的是1.5  我们要改成1.8的  具体步骤
+   第一种方式:
+   Ⅰ右键选中maven-add plugin -搜索compile 选中确定添加插件   这里加的是编译器插件(其实就是帮我们快速在pom里面生成加载插件的标签)
+   Ⅱ在pom.xml中此时多了一段
+   <plugin>
+  			<groupId>org.apache.maven.plugins</groupId>
+  			<artifactId>maven-compiler-plugin</artifactId>
+  			<version>3.1</version>
+  	</plugin>
+   Ⅲ在plugin中里面加入以标签即可
+   <configuration>
+  			<source>1.8</source>
+  			<target>1.8</target>
+  			<encoding>utf-8</encoding>
+	</configuration>
+  
+  第二种方式:
+  修改配置文件 /mavenconf/setting.xml
+  在profiles标签中加入以下标签
+  <profile>    
+    <id>jdk-1.8</id>    
+    <activation>    
+          <activeByDefault>true</activeByDefault>    
+          <jdk>1.8</jdk>    
+    </activation>    
+    <properties>    
+      <maven.compiler.source>1.8</maven.compiler.source>    
+      <maven.compiler.target>1.8</maven.compiler.target>    
+      <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>    
+    </properties>    
+  </profile>
+  **************************************************************************** 
+   
+   
+   
+   10在pom.xml中添加依赖的标签dependences标签是根标签下的子标签
+       Ⅰ手动添加<dependences></>标签 然后去MVNrepository上去搜索坐标
+       Ⅱ快速添加依赖 项目右键-add  dependence-然后搜索(注意 搜索只能搜索本地仓库,如果本地仓库没有还是需要去手动配置依赖)
+   
+     在maven工程中和动态web工程不一样,动态二多web工程中会自动添加tomcat服务器中的jar库
+     因此我们在动态web工程中创建servlet不会报错,因为有相应的jar包
+     但是在maven中没有tomcat的库,需要我们手动去引入,需要什么jar包就去引入什么依赖
+     
+     比如创建servlet需要 servlet-api依赖
+     
+     
+   
+   11如何运行maven项目到tomcat上呢,记住maven项目是不带tomcat的
+  Ⅰ第一种方法 我们需要将这个项目发布到tomcat服务器上,然后启动服务器器,前提是已经在eclipse上配置了tomcat服务器,我们所谓的运行就是运行到服务器上,也就是丢上去,然后启动服务器
+  
+  Ⅱ我们不是没有么? 那就添加一个tomcat插件  右键-maven-add plugin  如果搜索不到就手动在pom标签中 (这种方式并不是一个实际的tomcat,模拟了tomcat的环境来运行maven项目)
+   添加<bulid>  <plugins>   网上去搜tomcatplugin的坐标    </plugins> </build>
+     <plugin>
+    <groupId>org.apache.tomcat.maven</groupId>
+    <artifactId>tomcat7-maven-plugin</artifactId>
+    <version>2.2</version>
+	<configuration>
+		<path>/项目路径</path>   我们这个maven项目的项目路径名字
+		<uriencodie>utf-8
+    <port>8080如果为了和本地的tomcat区分可以使用其他端口号</port>  
+	</configuration>
+  </plugin>
+   
+   当我们加了插件之后就可以直接使用cmd在文件夹中 使用mvn tomcat7:run  这样就可以把文件部署到tomcat上  然后可以使用网访问
+   或者在eclipse中右键 -maven build-输入tomcat7:run   记住这样的话我们的项目是运行在maven的tomcat上的  
+   
+
+   
+   12依赖的作用范围
+      <scope></scope> 在依赖标签中
+      
+      这个标签的作用是修改依赖的作用范围
+      
+    
+     值:  compile：scope的默认值是compile，表示被依赖项目需要参与当前项目的编译，还有后续的测试，运行周期(就是放在tomcat上)也参与其中，是一个比较强的依赖。打包的时候该依赖通常需要包含进去。
+          test：依赖项目仅参与测试相关工作，包括测试代码的编译执行，不会被打包。
+          runtime：表示被依赖项目不用参与项目的编译，只参与后期的测试和运行周期。与compile相比，跳过了编译而已。例如JDBC驱动，适用运行和测试阶段。
+          provided：打包的时候可以不用包进去，外部的服务或组件会提供。事实上该依赖理论上可以参与编译，测试周期。相当于compile，但是打包阶段做了exclude(打包或者放到服务器上时不包含该依赖)操作。例如：开发web的时候，需要用到servlet-api，在pom.xml中添加依赖：
+           <dependency>
+          <groupId>javax.servlet</groupId>
+          <artifactId>servlet-api</artifactId>
+          <version>3.0-alpha-1</version>
+         <scope>provided</scope>
+          </dependency>
+        由于tomcat中也有servlet-api包，会发生冲突所以应添加：<scope>provided</scope>
+        system：从参与度来说，和provided相同，不过被依赖项不会从maven仓库下载，而是从本地文件系统拿。需要添加systemPath的属性来定义路径
+
+   13maven整合strus
+   记住此时strus的xml不是放在main/java下了  而是在src/resource中
    
    
    
    
+   13工程拆分的思想
+   将一个工程分模块拆分开比如dao service web拆开开发,然后提高效率
+   
+   如何将这些项目聚合起来呢?
+            项目父工程   
+      Dao子工程   service子工程  web子工程      
+            
+   maven中继承的思想:
+      在java中继承是为了消除重复,在父工程中引入所有坐标,那么让子工程继承父工程,那么在子工程中不需要依赖了
+      
+   
+   父工程:其实就是maven project  子工程:maven moudule
+   
+   同时:子工程之间也存在依赖的关系,比如service需要用到dao模块  web层用到service模块
+   
+   建立父工程:选择project 然后打包方式选择pom,在父工程中不写任何代码
+   
+   建立子工程:点击父工程,右键建立maven moudule,
+   dao层打包方式是jar包
+   service打包当时是jar包
+   web层的打包方式是war包,因为这web层需要webapp 页面等元素
+   
+   需要注意:在service包中需要添加dao的依赖  直接本地add-dependece 或者手动添加  同理需要在web层引入service模块的依赖
+   
+   依赖的传递:如果一个依赖a依赖了依赖b,那么我们引入依赖a会同时引入依赖b,但是有种情况除外
+              依赖b的作用范围是provided 那么就不会传递
+              
+   除了子工程之间的依赖,所有的依赖都在父工程中引入.
+   然后我们引入依赖后,需要去排除重复的依赖,在点击pom.xml,点击dependece hierarchy 在右边resolved dependence中去看一下 排除同名的依赖
+   
+   父工程 和子工程之间是继承关系,父工程的依赖 子工程可以直接用,不存在传递的传递
+   子工程之间才有依赖传递的说法
    
    
    
+   依赖的传递原则:
+   1如果两个同名依赖被传递进入,那么谁先声明谁先使用
+    比如依赖A 依赖于 c.01  依赖B依赖于c.02  那么先引入A由于传递关系 同时也引入c.01  如果此时引入依赖B,由于c.01已经引入,不再传递进从.02
+   
+    可以体现为在xml中谁在前面谁在后面 就先用哪一个 或者使用add的时候 谁先添加 
+  
+  2第二个原则  路径近着优先
+   比如我直接引入c依赖,那么依赖a和b的都会失效  因为a.c.01 或者b.c.02的路径比c长,此时优先用短的
    
    
    
+   版本锁定:在父工程中使用<dependecyManger>标签对某个依赖进行管理锁定,而这个测试类并不会被继承给子工程
    
+   但是子工程在去使用这个依赖的时候,会发现这个依赖的某个版本是被管理的,我们需要去使用这个被管理的版本,这个被管理的版本就是约定好的版本
+   ******************************************************
+   hibernate和spring一样需要日志依赖
+   hibernate需要slf4j的接口以及sl4j-log4j的接口jar包  而spring需要comms.logging接口  而实现这些接口的都是log4j
+   **********************************************************
+   
+   
+   版本常量管理:
+   在父模块中添加标签
+   <properties>
+   添加自定义标签比如  <spring.version>xxxx</spring.version>
+   </properties>
+   
+   然后可以在其他依赖的version标签中  通过${spring.version}引用常量 这样的话所有spring相关的依赖都是一个版本并且以后升级的时候也方便修改
+   当然也可以在eclipse中使用ctrl+f来替换
    
    
    
