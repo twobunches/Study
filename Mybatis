@@ -1,0 +1,190 @@
+一:MyBatis是一个优秀的持久层框架
+
+使用jdbc连接数据库的总结:注意需要jdbc的jar包  但是我们导包导的是java的接口,因为我们全都是使用的java的接口编程的,通过Class.forname()注册驱动,将实现类导入
+1Class.forname();等同于DriverManger.registerDriver("");   由于jdbc的Driver实现类的静态代码块有这个代码  因此只需要使用class.forname去加载类
+2DriverManager.getConnecton(); 三个参数  用户名 密码 以及url 
+3connection.prepareStatement(sql);
+4statement.setxxx();
+5resultSet rs= tatement.executeQuery();   执行查询得到一个结果集对象
+6rs.next()移动光标  rs.getxxx(属性);得到属性值  rs.close();
+
+使用DButils+c3p0   下载c3p0xml文件 然后配置放在src下  然后建立Combolpoodatasource  
+使用dbutils 创建queryuner  queryRunner.execute(参数需要实现一个接口) ....这里我记得可以用自定义的实现类,也可以使用dbutils提供的一个类
+使用duutiles 可以完成对结果集ResultSet的封装
+
+
+二 Mybatis架构
+ mybaties核心配置文件  SqlMapConfig  唯一
+ 以及 Mapper.xml  多个  相当于hibernate中的映射文件 但是又有点不一样 这里的映射是告诉mybatis数据库中的表 相当于告诉核心配置文件有哪些表
+也就是Mapper.xml映射到表,表的另一种体现      而hibernate中的映射是将对象和表建立关系
+Mapper中配置了操作数据库的sql语句
+
+核心类:
+SqlSessionFactory   对应数据库连接池
+SqlSession   对应于连接
+Mybatis的底层接口  executor  执行sql的对象   操作数据库的
+MappedStatement 同样也是底层封装对象,我们使用不到   作用:将输入参数映射至sql中,并且executor通过这个对象将结果映射到java对象中或者list中
+  这个对象的行为相当于给jdbc中preparationstatement对象设置sql的?的参数以及得到结果集之后的封装
+  
+
+三使用mybatis
+
+1mybatis需要一个 核心包mybatis-3.2.7(版本号)  以及一些依赖包 在mybits解压缩包的lib文件里面  这里就不列举出来了 网上搜索可以下载
+2由于mybatis和hibernate都是一样的只是对Dao的支持,底层使用什么数据库它们管不着,因此这两个框架都不包含底层的 jdbc驱动的
+  因此想要使用mybatis连接数据库还需要加上对应数据库的驱动包  oracle的ojebc 或者mysql的jdbc jar包
+
+   Ⅰmybits的核心包
+   Ⅱ依赖的lib包
+   Ⅲjdbc驱动
+******************************************************************************
+重要的事情一再强调!!!!!!!!!!!!!!!!!!!
+不管是mybatis还是hibernate连接数据库都需要引入相应的jdbc驱动包!!!!!!!!!!!!!!!!!!!!!!!!
+这两个框架并不自带驱动包!!!!!!!!!!!!!!!!
+******************************************************************
+
+四核心配置文件设置
+SqlMapConfig.xml
+全局配置文件（Config.xml）的约束
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<properties resource="jdbc.properties"/>  引入属性文件
+	<!-- 别名 包以其子包下所有类   头字母大小都行-->
+	<typeAliases>
+<!-- 		<typeAlias type="com.itheima.mybatis.pojo.User" alias="User"/> -->
+		<package name="com.itheima.mybatis.pojo"/>
+	</typeAliases>
+	<!-- 和spring整合后 environments配置将废除    -->  这个标签用于配置连接数据库相关,当和spring整合和不使用该标签,使用spring来配置数据库连接池
+	<environments default="development">
+		<environment id="development">
+			<!-- 使用jdbc事务管理 -->
+			<transactionManager type="JDBC" />
+			<!-- 数据库连接池 -->
+			<dataSource type="POOLED">
+				<property name="driver" value="${jdbc.driver}" />
+				<property name="url"
+					value="jdbc:mysql://localhost:3306/mybatis?characterEncoding=utf-8" />
+				<property name="username" value="root" />
+				<property name="password" value="root" />
+			</dataSource>
+		</environment>
+	</environments>
+	
+	<!-- Mapper的位置  Mapper.xml 写Sql语句的文件的位置 -->
+	<mappers>
+<!-- 		<mapper resource="sqlmap/User.xml" class="" url=""/> -->
+<!-- 		<mapper resource="sqlmap/User.xml" class="" url=""/> --> 这里的resource是mapper.xml的位置
+<!-- 		<mapper class="com.itheima.mybatis.mapper.UserMapper" /> -->
+<!-- 		<mapper url="" /> -->
+		<package name="com.itheima.mybatis.mapper"/>
+	</mappers>
+</configuration>
+
+********************************************************
+设置mapper.xml     mapper.xml是映射表 管理sql语句的地方
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+约束
+
+<mapper namespace="user">  这里mapper的命名空间原理来说随意取,但是为了规范,统一取成表的名字
+    <select id="标志这个sql语句的名字,在后面session通过这个id调用"  parameterType="java中的类型  用来执行sql语句中参数的类型" resultType="返回的数据类型">
+    这里的这个result设置返回的数据类型,加入我们查的是某个属性  那么设置普通类型比如Interger  如果是一行数据,那么需要将我们的实力类的全路径写上去 比如com.study.mybatis.pojo.User
+    比如用户的一行数据 我们有对应的pojo类 当我们的pojo类中的属性和表中的属性名字完全一致的时候可以使用resultType帮助我们完成自动封装
+    但是如果我们的pojo类和 表对应不上  那么就会出错 必须使用map手动封装 很麻烦   务必保证pojo和表严格对应
+    
+    当查找多行数据的时候,返回list类型,这里的返回值类型还是和上面一样,就是类,mybits自动监测多行数据帮我们完成多行数据的list封装
+    
+    
+      select *from user where id= #{随便填充比如value}  mybatis中使用#{}代替?  这里必须要填充 不允许重复
+      </select>
+      
+      在mybatis中${}和#{}的区别
+      #{}相当于占位符(取值)  参数是什么放上去就是什么样子 比如字符串"龙哥"  放进sql语句后那个地方就又了"龙哥"
+      ${}相当于字符串拼接(取值)  在${}占据的地方 会将值和上下文进行字符串拼接  比如'%${}%'   模糊查询中  这里假如用占位符会导致在里面多了一对引号
+                        从而导致语法错误,而我们在java中又只能输入比如字符串类型 如果这里面是数字的话其实用#和$没区别,因为不是字符串
+                        我们这里希望输入的字符串参数能够拼接在里面 所以使用${}  或者"%"#{}"%"也可以
+                        
+       mysql中双引号和单引号都可以表示字符串,它们可以嵌套使用,但是相同的不能嵌套                 
+      </select>
+      
+      <insert  id=""   parameterType="pojo类的全路径名称">  因为这里是插入一行数据 所以参数类型是一个pojo类
+            
+              <selectkey keyprperty="id" resulttype="Integer" order="after"> mysql是after 
+                  select LAST_INSERT_ID()   这个语句是mysql提供的可以查询最近一条插入语句的主键
+              </selectKey>
+              这个标签的作用,由于我们开发的时候一般主键都是采用自动增长的形式,因此在pojo类中没有设置主键的值
+              但是我们希望在插入之后能够得到这个自动增长的主键值然后赋值给我们pojo中相应的主键属性  
+              所有在insert标签中有了这个标签 selectkey 通过指定pojo中主键属性  类型  
+              order是指什么时候获得主键值   mysql是在插入之后生成主键的id 所以mysql是 after 而oracle生成主键的方式不一样
+              Oracle是在插入之前通过触发器+一个序列完成的  所以如果底层是Oracle的话 这里order=before  在插入之前获得主键值
+              要注意的是 select LAST_INSERT_ID() 是不分表的,只管最后一条插入语句并且取出主键值
+              所以mybits当执行插入语句后会马上执行这个标签的语句 然后得到主键值 然后返回给pojo的主键属性
+              
+              insert into user () values(#{pojo中的属性名字},#{},#{});   这里可以看出参数是一整个对象,然后我们执行sql语句的时候 从这一个对象中取需要的属性值
+               
+      </insert>
+      
+      
+      <update id="" parameter="类">
+      upadate xx
+      set username=#{引用传入的类属性}
+      where xx条件  依然可以引用类属性
+      </update>
+</mapper>
+
+
+
+*********************************************
+加载核心配置文件创建工厂
+  
+首先可以通过Mybatis中的一个类Resources类的静态方法加载文件
+String resource ="classpath:配置文件的位置"
+inputstream in = Resources.getResourceAsStream().build(in);
+
+SqlsessionFactory ssf= new SqlSessionFactoryBuilder(in);
+
+Sqlsession session = ssf.opensession();
+
+然后执行sql语句  而sql语句放在mapper中 1个mapper对应一个表
+session.selectOne("User.find",);     
+第一个参数是map中的查询sql的id,又命名空间+sqlid组成
+第二个参数是sql语句的参数
+session.selectList("User.find",);    获取多行数据 
+
+session.insert("空间+sqlid",参数);  由于插入的是一行一行的 所以这里参数是一个pojo类对象
+Mapper中对应insert标签  参数类型就是pojo类全路径  然后insert的sql语句中可以通过#{属性名}取出对象中的值
+更新的所有语句需要我们手动提交session.commit
+
+session.update("",类对象)  这个更新方法是通过主键更新,也就是更改一行值 所以只用传入一个类 指明主键值 其他要更新的值 即可
+
+******************************************************************
+关于mybatis中mapper 接收多个参数的问题:  四个方法
+https://www.cnblogs.com/tassel/p/12038096.html
+******************************************************************
+
+单元测试注解:
+@junit4        	junit5	特点
+@BeforeClass  	@BeforeAll	在当前类的所有测试方法之前执行。注解在【静态方法】上。  比如一次性执行两个测试方法,那么该注解的方法会在测试方法之前只执行1次,并且在before注解方法之前
+@AfterClass 	  @AfterAll	在当前类中的所有测试方法之后执行。注解在【静态方法】上。   比如一次性执行两个测试方法,那么该注解的方法会在两个测试方法之后只执行1次,冰倩在after注解方法之后
+@Before	        @BeforeEach	在每个测试方法之前执行。注解在【非静态方法】上。     比如一次性执行两个测试方法,那么该注解的方法会在每个测试方法执行之前都执行1次
+@After	        @AfterEach	在每个测试方法之后执行。注解在【非静态方法】上。
+
+*********************************************************************************************
+
+
+
+五
+
+
+
+
+
+
+
+
+
+
