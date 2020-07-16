@@ -347,4 +347,43 @@
    当然也可以在eclipse中使用ctrl+f来替换
    
    
+   12maven中resource配置文件的位置
+    首先hibernate的映射文件是和类同级的,在java项目中这个文件放在类文件中,而maven为了分层管理,将配置文件放在resource中的
+    但是要注意的是,在resource中也要建立和类所在包一摸一样的路径,然后把文件放进去
+    这样maven就会在打包的时候,或者运行的时候把路径相同的类和文件整合在一起,比如在resource直接子文件下的 文件会放进java文件夹中
+    因此在填写路径的时候相对路径只要把resource 想象成java文件即可	
    
+   总结:
+   1resource是maven中统一放配置文件的地方,它的目录结构和classpath下一摸一样,在这个文件下创建文件夹相当于在src下创建文件夹,我们需要在类中引用这个文件的时候
+   只需要把main/resroce想象成mave/java即可,最后运行的时候,maven会将resource和java中同名路径的文件整合起来
+   2在最后运行父项目或者打包的时候,所有子项目main/java同级包和类会被整合在一起,mian/resource 里面的配置文件也会按照  同名文件夹和同名包的方式被整合到一起
+   所以所有子项目可以用各自的spring配置文件,并且可以直接互相引用bean,因为如果按照规范将配置文件放在同名文件中,最后整合后也会放在一起,而在同一个文件夹中的配置文件
+   相互引用没有问题,父项目运行的时候会整合所有类和配置文件到一个src下,根据各个子项目的结构. 一个子项目可以引用另外一个子项目的文件,前提是必须有依赖关系
+   比如
+    <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:spring/application*.xml</param-value>
+  	</context-param>
+ 	 <!--spring封装的核心监听器ContextLoaderListener-->
+  	<listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>   加入通配符的方式加载多个核心配置文件
+
+ 另外spring多个核心配置文件的加载顺序不影响bean的生成,但是前提是配置文件都加载了才不影响,比如a文件加载了 但是b没加载, a不能用b的bean
+ spring先加载文件,在初始化bean,所以我们在web.xml中直接加载所有核心配置文件  这里虽然加载了多个文件但是只有一个applicationcontext对象
+
+   
+   
+   其次一般来说,class=""  这里面填写类的全路径  包+类 用点号隔开  而一般我们输入xml文件或者属性文件时 使用斜杠/来分隔,  并且可以(也不是必需)加上classpath: 前缀
+   
+   
+   实例:  main/java下 com.study.pojo  
+   	 那么映射应该放在  main/source/  com.study.pojo
+	 
+	 核心文件cfg 应该直接放在  main/source/下   那么对应 main/java  对应java中的src  对应web项目中的jabvaresource/src
+		
+	*在hibernate的核心配置文件中可以不配置自带的数据库连接池,可以在spring中配置c3p0连接池,然后通过属性注入 注入到sessionfactorybean中
+	 同时也应该注入属性 configLocation  =cfg文件的位置
+	 在hibernate中原对象需要使用configure()这个方法才能加载默认的cfg文件,而这里不能调用方法,所以需要使用属性注入给sessionfactory
+	 
+		
