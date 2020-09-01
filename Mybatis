@@ -50,11 +50,12 @@ SqlMapConfig.xml
         PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
-	<properties resource="jdbc.properties"/>  引入属性文件
-	<!-- 别名 包以其子包下所有类   头字母大小都行-->
+	<properties resource="jdbc.properties"/>  引入属性文件  这个标签必须在最前面
+	<!-- 别名 包以其子包下所有类   头字母大小都行-->  给pojo类起别名,在mapper.xml中参数类型和结果类型可以不使用全路径
 	<typeAliases>
-<!-- 		<typeAlias type="com.itheima.mybatis.pojo.User" alias="User"/> -->
-		<package name="com.itheima.mybatis.pojo"/>
+<!-- 		<typeAlias type="com.itheima.mybatis.pojo.User" alias="User"/> --> 第一个类全路径  第二个是别名
+		<package name="com.itheima.mybatis.pojo"/>  
+		这种是将一个包下的所有pojo统一由mybatis起默认别名,默认别名一般为类名,并且不区分大小写这个用于表很多的情况下使用
 	</typeAliases>
 	<!-- 和spring整合后 environments配置将废除    -->  这个标签用于配置连接数据库相关,当和spring整合和不使用该标签,使用spring来配置数据库连接池
 	<environments default="development">
@@ -73,12 +74,15 @@ SqlMapConfig.xml
 	</environments>
 	
 	<!-- Mapper的位置  Mapper.xml 写Sql语句的文件的位置 -->
-	<mappers>
+	<mappers>  注册mapper.xml
 <!-- 		<mapper resource="sqlmap/User.xml" class="" url=""/> -->
-<!-- 		<mapper resource="sqlmap/User.xml" class="" url=""/> --> 这里的resource是mapper.xml的位置
-<!-- 		<mapper class="com.itheima.mybatis.mapper.UserMapper" /> -->
-<!-- 		<mapper url="" /> -->
-		<package name="com.itheima.mybatis.mapper"/>
+<!-- 		<mapper resource="sqlmap/User.xml" class="" url=""/> --> 这里的resource是mapper.xml的位置  推荐方法
+<!-- 		<mapper class="com.itheima.mybatis.mapper.UserMapper" /> -->  class是指定mapperd动态代理接口,但这个方法要求mapper接口 和mapper.xml在一个目录下 并且名字一样
+<!-- 		
+<mapper url="" /> -->   这里就是指定xml的绝对路径,这个方法没意义,因为项目可能随意拖拉
+		 需要注意的是resource class url 只能有一个	
+
+		<package name="com.itheima.mybatis.mapper"/>  注册指定包下的所有mapper接口,并且所有xml和mapper接口必须放在同一目录下
 	</mappers>
 </configuration>
 
@@ -143,9 +147,9 @@ SqlMapConfig.xml
   
 首先可以通过Mybatis中的一个类Resources类的静态方法加载文件
 String resource ="classpath:配置文件的位置"
-inputstream in = Resources.getResourceAsStream().build(in);
+inputstream in = Resources.getResourceAsStream(resource);
 
-SqlsessionFactory ssf= new SqlSessionFactoryBuilder(in);
+SqlsessionFactory ssf= new SqlSessionFactoryBuilder.bulid(in);
 
 Sqlsession session = ssf.opensession();
 
@@ -177,8 +181,42 @@ https://www.cnblogs.com/tassel/p/12038096.html
 
 
 
-五
+五mapper的动态代理开发  (不使用原始Dao,仅限于mybatis)
 
+  原始Dao开发需要写dao接口以及实现类,这样增加了垃圾代码的数量
+  
+  因此mabatis有一个接口开发方法:程序员只需要编写mapper接口,由mabtis框架更具接口的定义创建接口
+  的动态代理对象,使用这个代理对象调用我们定义的方法,为什么可以这样做?为什么mabtis会知道该怎么
+  实现我们需要的接口,因为我们实现Dao接口后其实就是取调用mapper.xml里面实现存好的sql语句,它们的
+  格式都是一样的,步骤差不多都是 创建连接 调用里面某条sql语句  因此只要我们编写mapper接口时遵循一定
+  的规范,那么mabtis就可以帮我们生成代理对象,以便省去写垃圾实现代码的时间
+  
+  比如我们写Dao的接口 一个查询一个人的方法 和一个查询所有人的方法,在我们去实现这个接口的时候,
+  这两个方法所不同的地方其实就是调用mapper.xml里面sql语句的那部分,其他都是一样的,因此mapper接口开发由此而来
+  
+  遵循的原则:
+  
+  UserMapper接口开发:
+  1mapper.xml文件中的namespace的值与mapper接口的类路径相同(全路径名称)  
+     这里是保证查询的表一定会是对应的表,因为 mapper.xml有很多个,可以不同的mapper.xml有相同id的sql语句
+     那么我这个mapper接口里面的方法是对应哪个mapper.xml中的sql语句呢?
+     
+  2  mapper接口中方法名一定是mapper.xml中的sql语句的id值
+     这样在动态代理的时候mabtis才会知道这个方法该执行哪个sql语句
+     
+   3mapper接口方法的输入参数和mapper.xml中定义的sql语句的paremetertupe的类型相同
+   
+   4mapper接口方法的返回值类型应该和mapper.xml中定义的每个sql的result的类型相同
+   
+  
+ 
+  编写完mapper接口后,只需要使用session.getMapper(mapper接口的字节码对象); 这个方法返会这个接口的动态代理对象
+  然后直接调用方法即可
+	  
+  其次,对于动态代理对象调用方法 调用sqlsession.selectone 还是selectList根据mapper接口的返回值而决定的	 
+  
+  
+  
 
 
 
