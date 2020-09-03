@@ -1,0 +1,66 @@
+1什么是springMvc
+  SpringMVC是对servlet的一个简单封装,是一个类似与strus的view层的框架
+
+2SpringMVC核心 配置前端控制器  DisPathcerservlet
+
+前端控制器  DisPathcerservlet  负责将业务请求转发
+处理器      handler  负责处理业务请求
+
+
+如何配置前端控制器:
+1在web.xml中配置 
+ 其实就是将DisPathcerservlet这个类(在springmvc的jar包中)配置为servlet
+ 
+ <servlet>
+   <servlet-name> springMVC</servlet-name>
+    <servlet-class> 填写该类的全路径名称</servlet-class>
+      
+    <init-param>  这里给前端控制器添加了一个初始化参数,加载springmvc的配置文件 其实作用和spring中的核心配置文件一样的...
+       <param-name>contextConfigLocation<param-name> 这里和psring核心监听器参数名一致
+       <param-value>classpath:写springmvc配置文件地址</param-value>
+      </init-param>    这里如果没有配置xml,那么会默认去web-inf下去找[servlet名称]-servlet.xml这个文件 比如这里是springmvc-servlet.xml
+ </servlet>
+  <servlet-mapping> 
+    <servlet-name>springMVC </servlet-name> 和上面一样
+    <url-pattern> /</url-pattern>  配置访问规则    
+  </servlet-mapping>       
+  url-pattern
+    1、*.后缀名 不会出现静态资源访问不到的问题，但是不支持RESTful风格的url
+    2、/ 会出现静态资源访问不到的问题(下面会说出解决方案)，支持RESTful风格的url  静态资源比如.html .png .css .js都是静态资源  而.jsp不会被拦截 jsp不是静态资源
+        / 拦截所有但是不包括.jsp    但是静态资源是没有对应的handler 因此会出现404 导致访问不到
+
+        配置 / 的意思：匹配的级别最低，在web.xml找不到对应的url-pattern就会找到配置/的Servlet(也就是缺省值).
+        为什么静态资源找不到呢，因为Tomcat中有个DefaultServlet(匹配模式也是/)来处理静态资源的，在Tomcat路径下的conf/web.xml能找到
+        当我们请求到服务器时，首先会加载Tomcat自带的web.xml,然后再加载我们自己的web.xml,当我们配置 / 时，就把Tomcat中自带的就给覆盖掉了，
+        此时我们的前端控制器并没有寻找静态资源的功能，所以就会根据url找对应的Handler，找不到就报404了
+
+
+    3、/* 错误的配置方式，因为此方式是什么都会被前端控制器拦截，比如在转发到jsp视图的时候也会被拦截，而前端控制器根据url找不到对应的Handler就会404.
+
+ 2配置springmvc.xml 
+    可以网上搜索springmmvc的头部
+    作用: 添加标签 用于扫描注解@controller @Service
+     <context:component-scan base-package=""/>
+   
+   @controller这个注解用于配置servlet层  用于类上 表示这是一个视图层
+   
+   @requestMapping(value="/user.action")  设置请求匹配
+  
+  
+  3然后创建controller类添加@controller注解  创建方法添加@requestMapping注解
+  public ModelAndView test(){
+  
+       ModelAndView mav = new ModelAndView("返回的页面地址");
+       mav.addobject();可以给这个转发请求添加一个参数....也就是带值过去
+       return mav;  
+  }
+  整个过程:
+  外部的请求 通过web.xml里面的拦截器被拦截,然后通过springmvc.xml中的注解扫描器扫描指定包,
+  由于添加了注解,所以那些类进入了spring的容器,然后handler映射器就去匹配和被拦截请求一致的方法
+  然后将包+类+方法名返回给前端控制器,然后开始执行(在执行之前可能还有一步,设置拦截器,到底要不要执行这个handler)
+  
+  
+  
+  
+  
+  
