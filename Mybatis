@@ -422,6 +422,74 @@ id in ()
 
 
 
+11mybatis整合Spring
+
+1 sqlsessionFactory应该放到Spring容器中去 并且作为单例存在
+2 传统dao的开发方式,应该从spring容器中获得sqlsession
+3 mapper代理形式中,应该从spring容器中直接获得mapper代理对象
+4 数据库的连接以及数据库连接池事务管理交给spring
+
+所需jar包 spring所需jar包  mybatisjar包  spring-mybatis整合包  数据库驱动 数据库连接池
+
+原始Dao开发
+ 创建配置文件:
+ 1mybatis的核心配置文件sqlmapConfig以及 mapper.xml(后面)
+ 
+ 2spring的核心配置文件
+   配置dataSource <bean>  这里是配置自定义的数据库连接池
+   配置 mybatis的工厂类  在spring-mybatis的整合包中有一个 sqlsessionFactoryBean的类 将这个类注册为bean
+   <bean id="sqlSessionFactory" calss="org.,......... sqlsessionFactoryBean">
+      <property name="dataSource" ref="dataSource"> 给这个bean注入连接池属性  Factory肯定得给它一个连接池吧
+       <property name="configLocation" value="classpath:">  注入配置文件     ref 和value的区别  ref专门用于指定类的引用 value是值的引用
+    </bean>
+ 
+ 3编写Dao接口以及实现类
+   将实现类配置到spring核心配置文件,一般来说需要给dao实现类注入工厂类实例,声明这个类的变量,但是有简单的方法,spring-mybatisjar包整合提供了 sqlsessionSupport这个类
+   在这个类中提供了sqlsession以及 setsqlsessionfactory()方法,在这个方法中会得到sqlsession,要说的的是属性注入是去找同名的set方法,根据set方法的参数名来注入的
+   由于我们只想得到sqlsession,因此sqlsessionSupport这个类提供了 setsqlsessionfactory()方法注入 setsqlsessionfactory,然后得到的是sqlsession
+   当daoimlp继承了之后,可以使用sqlsession变量,由于sqlsession私有,通过this.getsqlSession()
+4调用sqlsession.selectone或者 selectList()方法
+
+Mapper动态代理开发步骤:  通过spring管理生成mapper接口代理类
+  在mybatis中是使用sqlsession.getmapper()来生成mapper代理类
+  当交给spring后,spring-mybatis整合jar包提供了一个 MapperFactoryBean的类  这个类用于生成mapper代理类,这个类不是生成mapper工厂,而是一个帮我们生成代理类的工具类
+  因此步骤大致和上面一样都要建立核心配置文件
+  1编写mapper接口
+  2使用MapperFactoryBean类注册mapper接口代理类到配置文件
+  <bean id="userMapper" class="MapperFactoryBean">  这里想要为什么接口生成代理类 id就是什么
+  <property id="sqlsessionFactory" ref="">  注入sql工厂
+  <property id="mapperInterface"    value=" mapper接口的全路径名称">  由于这里不是写的文件的路径 因此是用.隔开的,只有写文件路径时用/隔开
+  </bean>
+  
+  其实这个Mapperfactorybean就是将我们在mybatis中的操作封装了一,简单来说这个类用于生成指定mapper接口动态代理类的一个工具类
+  
+  然后我们要调用mapper接口的话只需要,只需要声明接口,然后注入这个代理bean即可
+  可以通过注入 也可以直接通过 applicationContext.getbean(id名字或者 所需类的字节码对象)
+ 	@resource(value="userMapper")
+  比如  private UserMapper userMapper;
+        或者在servicebean中注入该属性
+ 
+  这个有点问题:万一mapper多了以后,那么就要在配置文件中注册很多mapper的代理类,因为每一个代理类需要指定一个接口
+  为了解决这个问题:mapper动态代理扫描开发
+   此时不使用mapperfactorybean这个类了,使用mapperScannerConfigure这个类,这个类可以支持扫描整个包而不用指定某一个接口
+   <bean class="MapperScannerConfigure">
+       <peoperty name="basePackage"  value="包名">  直接指定一个包名  会扫描这个包及其子包下的所有mapper接口
+       并且这个类不需要注入会话工厂,这个类一旦实例化会自动去spring的容器里去找sqlsessionfactory,而Mapperfactorybean需要指定
+    </bean>
+     通过这种方法在spring中批量的注册mapper接口的动态代理类 由于没有指明id 因此想要去使用它们不能通过注入
+     只能通过getbean(目标接口类.class)这种方法获得对象 
+     
+     通过第一种方法由于有id因此可以属性注入
+ 
+ 想要从Spring中获得bean的实例类的方法:
+  1属性注入 在测试类中注入该属性  注解注入  构造方法注入  set方法注入
+  2使用applicationcontext对象  通过getbean()方法   参数为目标bean的id 或者目标bean类的字节码对象 比如 user.class
+  
+  
+mybatis逆向工程:通过数据库表生成pojo类以及mapper.xml以及固定的mapper接口 里面的方法是预先定义号的
+
+
+
 
 
 
