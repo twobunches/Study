@@ -6,8 +6,8 @@ schema:SPring XML文档的相关约束
 2Spring引包
 Ⅰ IOC的四个核心容器:beans  context core  SPEL(expression)
 Ⅱ spring开发也需要日志的jar包 log4j  以及commons.logs jar包 
-Ⅲcommons.logs这个jar里面都是一些日志接口  具体的实现可以是log4j也可以是jdk自带的日志实现
-Ⅳ使用log4j需要再classpath目录下配置log4j属性文件以及引入log4j的jar包
+Ⅲcommons.logs这个jar里面都是一些简单的统一日志接口  具体的实现可以是log4j也可以是jdk自带的日志实现java.util.logging
+Ⅳ使用log4j需要再classpath目录下配置log4j属性文件(这点很重要!!!!!!!!!log4j.properties)以及引入log4j的jar包
 
 3Spring解决了什么
   Spring使得类和类之间的耦合变低,通过IOC使得底层的实现不改变上层的代码 
