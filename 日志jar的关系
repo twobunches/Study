@@ -1,0 +1,32 @@
+一
+commons-logging
+是apache最早提供的日志的门面接口。它的主要作用是提供一个日志门面(提供的接口)，使用者可以使用不同的日志实现。
+用户可以自由选择第三方的日志组件作为具体实现，像log4j，或者jdk自带的logging， common-logging会通过动态查找的机制，在程序运行时自动找出真正使用的日志库。
+common-logging内部有一个Simple logger的简单实现，但是功能很弱。
+
+二
+slf4j
+从官网的描述看，slf4j只是一种日志的门面和日志抽象框架，
+而java.util.logging,log4j,logback都是slf4j抽象框架的具体实现，只要调用slf4j的API就可以集成任何的实现框架在一起。
+
+
+三logging
+Java内部自带的日志工具，java.util包下。
+
+四log4j
+Apache下的一个开源日志框架，也是目前应用最广的一个日志框架。
+
+
+五logback
+logback是slf4j的原生实现框架，同样是log4j同一个人之手，但拥有比log4j更多的优点和更多的特性，用来代替log4j。
+
+
+总结:
+1commons-logging,slf4j只是一种日志抽象门面，不是具体的日志框架。
+2、log4j,logback是具体的日志框架。
+3、一般首选使用slf4j+logback，或者slf4j+log4j,commons-logging+log4j。
+由于commons-logging是apache提供的接口,因此commons-logging+log4j是不需要适配层的
+
+但是slf4j+log4j需要一个slf4j-log4j.jar的适配层,因为log4j最早是根据comming-logging编写的实现类,不能够直接调用slf4j的接口来调用log4j的类
+但是logback不需要,因为logback是logback是slf4j的原生实现框架,就好像在comming-logging下可以直接调用log4j的接口
+
