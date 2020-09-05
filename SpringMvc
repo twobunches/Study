@@ -60,7 +60,185 @@
   然后将包+类+方法名返回给前端控制器,然后开始执行(在执行之前可能还有一步,设置拦截器,到底要不要执行这个handler)
   
   
+ 三在springmnv的配置文件中配置组件
+ 配置mybatis提供的三大组件:处理器映射器 处理器适配器 视图分析器
+
+ 由于默认使用的处理器映射器是一个defaulthandlerMapping....这个类已经被废弃了,但是还能使用
+ 所以需要在springmvc.xml中配置一个叫requestMappinghandlerMapping 的类 这个类的名字和注解的名字是一样的
+ 
+ <bean class="org.xxxxxxx.requestMappinghandlerMapping"/>
+
+ 配置处理器适配器:
+ <bean class="org.xxxxxx.requestMappinghandlerAdapter">
+
+
+  可能直接配置这两个比较麻烦,有一个简单的方法:
+  <mvc:annotation-driven/>   直接在mvc配置文件中配置这个标签 注解驱动即可加载上述两个组件
+
+
+  配置视图解析器:这个其实不用配置,因为默认使用的是正确的,但是有些时候我们解析视图的时候希望能够自带前缀后缀
+  那么我们在项目里写jsp文件路径的时候更加简单,比如
+  modelandview.setmodlename("应该是视图的相对路径全名");比如/web-inf/jsp/login.jsp
+  但是我们写的时候希望偷懒只写一个login...  那么配置视图解析器的作用就是可以在解析视图名字的时候由mybatis统一加上前缀和后缀
+  
+  <bean  class="xxxxx....internalresourceView Resolver">
+  <property name="prefix" value="/web-inf/jsp/"> 解析视图时添加前缀
+  </bean name="suffix"  name=".jsp"> 解析视图时添加后缀  
   
   
+    
+四SpringMVC整合Mybatis(其实就是spring整合mybatis)  因为springmvc就是sping的一部分
+  需要注意的时:有些属性文件不能少  使用spring配置文件配置数据库连接池需要开启属性文件扫描以及jdbc.properties文件
+  其次使用spring需要log4j.properties文件
+  
+  spring的applicationcontext文件
+  mybatis的sqlMapConfig  需要提出的时,在sqlmapconfig中不需要配置environment这个标签了,因为数据库的配置连接交给了spring了
+                        其次也不需要配置Mappers标签指定mapper.xml或者mapper接口的位置了,因为mapper接口也在spring中注册为实体bean了(代理类)
+                          因此,在sqlmapconfig中只需要一个typealiases标签设置别名
+                          本来有三个必写标签: 1typexxx
+                                              2environment  整合后不需要
+                                              3mappers  指定mapperxml位置  整合spring后不需要
+  springmvc的配置文件:配置controller层的注解扫描以及配置三大组件
+  
+  配置spring核心文件监听器(web.xml中配置):  
+  配置这个的目的时我们不需要手动加载spring核心文件启动spring,在项目一开始就自动加载
+    <listener>
+      <listener-class>  contentloaderListener</listener-class>
+    </listener>
+   <content-param>
+      <param-name>contentconfiglocation</param-name>
+      <param-value>classpath:xxxxx<param-value>
+   </content-param>
+   
+   
+  在spring核心配置文件中配置事务注解 ,开启事务注解添加相应标签  并且注册事务管理器bean,注入datasource
+  
+  
+  五参数绑定
+    在处理请求的时候接收参数,将请求中的参数绑定到相应的方法中,这个方法其实就是被@requestMapping注解的方法
+  
+  spring单例模式下的controller怎么处理多请求的呢?我们的controller是单例模式的,为什么可以处理多请求而不冲突呢
+  因为spring为每一个请求开启了一个线程,然后将我们写好的单例类中的方法创建一个副本,每一个请求使用一个副本
+  
+  如果一个变量是成员变量，那么多个线程对同一个对象的成员变量进行操作时，它们对该成员变量是彼此影响的，
+  也就是说一个线程对成员变量的改变会影响到另一个线程。
+　如果一个变量是局部变量，那么每个线程都会有一个该局部变量的拷贝（即便是同一个对象中的方法的局部变量，也
+  会对每一个线程有一个拷贝），一个线程对该局部变量的改变不会影响到其他线程。
+  
+  
+  所以springmvc在controller中接收从请求传递的参数时不能够使用成员变量接收,只能使用方法的参数的形式接收 请求中的参数
+  因为spring多线程处理多请求下,方法是独立的副本,局部变量是不共用的,而成员变量是公用的
+  
+  
+  关于如何在请求中添加参数:
+  1 通过表单的方法提交数据,那么在跳转页面的时候会带上表单中的数据,数据是放在http的请求头中的
+  2 通过get请求的方式,在url后面添加上参数比如http://baidu.com/user.do?id=......这样
+  
+  
+  第一种:默认参数绑定
+  @requestMapping(value="")
+  public ModelAndView user(HttpServletrequest req,HttpServletresponse res,httpsession session,Model model){
+       req.getparameter("");
+      
+  
+  }  通过Servlet原始的方式接收请求参数,从req中获得请求中绑定的参数,以这种方式获得参数的话,所有参数都会被默认是String类型,这点要注意
+  
+  这里的参数可写可不写,如果访问的请求是带有参数的,需要处理参数就需要加上
+  
+  第二种:简单类型
+  spring支持可以直接设置方法形参接收参数
+  
+  比如请求中绑定id=2这么一个参数,那么在@requestMapping的方法中设置名字一样的形参 
+  注意:方法形参和请求的参数一定要名字一样,spring才会将请求中携带的参数赋值给方法中的形参
+  注意:方法形参的类型尽量都是用包装类型
+  public ModelAndView user(Interger id){
+  }
+  
+  
+  如果实在是想形参和入参的名字不一致,可以使用@requestParam 注解
+   public ModelAndView user(@requestrParam(value="id",required="fa",default="1")Interger id001){
+  }
+  这里通过这个注解指定了参数名为id的参数绑定到 方法形参id001上
+  并且使用这个注解默认要求请求中一定要有相应的参数,所以可以设置required为false,并且设置一个默认值,当没有相应参数的时候启用默认值  
+  
+  
+  第三种:
+  绑定pojo类型
+   要求:在接受请求中的表单属性时,如果想要一次性以pojo的方式接收,而不是使用多个简单类型
+   那么要求表单中的各个属性的名字和pojo中属性的名字一模一样,但是数量可以少,比如表单中属性的个数少于pojo类中的,但是不能多也不能名字不一致
+   因为一个pojo类中的成员变量都有默认值,所以spring可以将表单中有的都封装到pojo中
+   
+   然后 public ModelAndView user(User user){
+   
+   }  可以在方法中直接添加pojo类的参数,可以一次性接收表单中的所有参数,spring帮我们完成了封装
+  
+  
+  spring框架下 post方式提交表单会出现乱码问题:
+  无非就是表单的数据复制给pojo时出现了问题,因为我们是使用spring的方式自动填充
+  因此不能在方法内部处理,只能设置过滤器filter
+  spring提供了一个过滤器 用于处理post乱码问题
+  <filter>
+    <filter-name>encoding<filter-name>
+    <filter-class>characterEncodingFilter</filter-class>
+    <init-param>
+      <param-name>encoding<param-name>
+      <param-value>UTF-8</param-value>
+     </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>encoding<filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  
+  第四种:绑定到被包装的pojo类
+  比如public bigUser(){
+  private User user; pojo类
+  getset方法;
+  }
+  我们想要以这个bigUser来接收 user的相关参数
+   public ModelAndView user(biguser  bu){  参数是包装类
+  }
+  
+  那么表单中的参数名必须是 = pojo类名.属性名字 (比如user.name  user.sex等等)  
+  比如 封装的时候spring根据参数名user.name 将这个值封装到biguser类中的User成员变量中的name变量
+  
+  因此如果我们想要将表单中的各个参数赋值到 一个包装类中的pojo类中,那么只需要将表单中的参数名字改为pojo类名.属性名字
+  因为我们是想要将值绑定到包装类bigUser中的User类里面的成员变量那么只需要将名字改为pojo类名.属性名字
+  
+  比如绑定到成员变量,那么参数名字应该和类的成员变量一致,如果想要绑定到包装类中的pojo类变量中的成员变量中,以此类推参数名字自然应该是pojo
+  
+  一般来说如果带了.的名字,spring会将这个值封装到内部类中的成员上去,如果没. 那么就去匹配成员变量
+  
+  
+  五自定义参数绑定:
+  由于一些特殊的参数类型spring不能帮我们完成自动赋值,比如日期,日期的格式有很多种,我们随意写的日期字符串spring无法识别转化为Date日期
+  比如spring无法完成String转化为Date的操作,因此需要自定义参数绑定,编写一个转换器类来完成这个操作并且将这个类注册进spring容器
+  
+  配置转化器服务:
+ 1 在springmvc标签添加属性: conversion-service
+ <mvc:annotation-driven conversion-service="转化器工厂的id"/>   这个标签也是用来开启新的处理器映射器和处理器适配器的
+  
+ 2 配置转换器工厂(配置一些特殊类型的参数绑定,比如日期,去掉前后空格等)   注册转换器类的beanfactory
+   <bean id="" class=""org.springxxx.....FormattingConversionServiceFactoryBean>
+      <property name="converter"> 
+          <list>  在这个list中配置多个转换器
+              <bean class="自定义转换器的类-比如转换日期的">  注意这个类是一个转换器 用于将页面上的类型转化为pojo中的某个类型
+          </list>
+       </property>
+  </bean>
+  
+  
+  3编写转换器类  该类需要实现Converter接口
+  
+  public class Dateconvert implements Converter<S,T>{
+  
+      public T convert(S s){  这里的s参数就是页面传递过来的参数值 S是类型
+         
+         
+         return null;
+      }
+  
+  }
+  S代表页面传递过来的类型  T代表转换后的类型 (指定了之后Spring在遇到这样的转换的时候,就会采用我们自定义的类型转换器)
   
   
