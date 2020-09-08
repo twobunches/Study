@@ -427,8 +427,10 @@
      
       1以上是接收一个json对象的方式
       2接收json数组的方式:https://blog.csdn.net/bladeandmaster88/article/details/99697740
-      用list接收json数组可以直接声明一个list,这点和接收普通list不一样,普通list需要声明一个包装类包裹list
-
-
+          用list接收json数组可以直接声明一个list,这点和接收普通list不一样,普通list需要声明一个包装类包裹list
+          或者前端将json数组包装成一个json对象,然后在后端用一个包装类接收,包装类里面声明一个list对象  注意list变量名要和包装后的json对象的key值对应
+          
+          这两种方式都需要我们使用@requestBody修饰参数
+          
 
   
