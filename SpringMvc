@@ -241,4 +241,194 @@
   }
   S代表页面传递过来的类型  T代表转换后的类型 (指定了之后Spring在遇到这样的转换的时候,就会采用我们自定义的类型转换器)
   
+第六种:数组参数绑定
+   如果从网页传过来一个数组,那么在handler上接收时可直接申明一个同名的数组参数接收即可,比如网页上的复选框就是一个数组
+    因此如果想要使用一个对象来接收,只需要在对象中创建一个数组成员变量即可
+    注意input框里面的参数被submit提交后,里面的name属性就是参数的名字
+  
+
+第七种:list参数绑定
+  如果想要将数据绑定到list中去,比如List<User> userList;
+  那么网页中参数的名字 必须时 userList[0,1,2..].属性名 这样的形式  springmvc才能完成绑定  这里的名字规范是一种形式,spring通过这种形式判断那些input是属于一组的,然后封装进list的一个对象中
+  
+  !!!!!!!!!!!!
+  和数组不一样的是,数组支持直接声明数组参数也支持在包装类中声明数组成员变量,哪一种都能接收
+  而list不一样,要接受List参数必须在handler中声明一个包装类,在包装类里面声明一个List成员变量
+  
+
+六@RequestMapping的用法:
+@RequestMapping用于标识handler方法
+
+参数value 用来指定url,相对路径 参照项目的根目录,value可以是一个数组,可以为一个handler配置多个url
+
+比如value="/user/11.do"  那么只有xxx项目目录/user/11.do这个访问能够和这个方法匹配
+作用就是和servlet中的url-pattren一模一样的
+
+ method参数  用来限定访问的访问方式 比如get 方式 或者post方式
+ method=RequestMethod.POST 限定只有post的请求能够和这个handler匹配
+ 
+ 
+ 路径的窄化:
+ 将@requestMapping放在类上面 可以为所有方法设置一个前缀路径
+ 比如@requestMapping(value="/User")
+    public class Usercontroller{
+    }
+  里面所有的方法的路径前面还多了一个/User,用这种方法可以把所有方法的公共路径提取出来
+
+
+七Controller层方法的返回类型有哪些
+
+1MOdelAndView类型  无敌的 既可以带着从后端返回页面的数据,也可以返回视图路径
+                这个视图对象可以存放从后端返回的数据,也可以存放某一个视图
+                然后这个对象经过视图解析器解析,将jsp渲染成html
+
+  这个对象在handler方法中直接new即可
+   MOdelAndView的方法:
+        1addObject(名字,值)  添加后端返回的数据
+        2setViewName() 添加返回的页面,参数是页面的路径,String类型
+
+ 2String类型   返回视图的路径,也就是页面跳转 (企业推荐)
+ 
+ 这种方式的话无法带数据会去,这种情况下需要在方法的形参中设置一个Model model参数
+ 然后使用model.setattribute(); model这个对象的作用类似于request.setattribute的作用,给请求附加参数
+ 所以可以看出springmvc中页面跳转默认是是类似于请求转发的,而不是使用response的重定向
+ model这个形参不是用来接收请求中的参数,而是用来装取返回页面的参数
+ 如果想要重定向的话,只需要在返回的String路径上添加前缀redirect  比如 retuen "redirect:xxxxx"
+
+ 3void类型  这种方式适用于ajax请求,我们只返回数据,由ajax接收数据
+ 这种方式也适用于前后端分离的设计模式,后端不进行页面的跳转,只返回数据
+  由于ajax接收json之类的数据,这里是使用response之类的手段进行返回的,和servlet一样
+  而不是说使用Model参数,model只能够请求附加参数,适用于请求转发,而这里是给ajax响应返回参数,需要使用serlvet中response这一对象
+  
+  比如首先要设置response.setcontenttype  设置返回json类型, 其次要将java对象转化为json字符串(java里面没有json对象)
+  如果实在要跳转视图,那么可以添加request参数和reponse参数,通过servlet中的页面跳转方式来跳转
+ 
+ 
+
+八异常处理器
+ springmvc在处理请求过程中出现异常信息交给异常处理器处理
+
+异常: 1预期异常(检查异常) 通过try catch 之类 或者抛出 处理
+      2运行时异常(非检查)  通过修正代码解决
+
+在springmvc中我们可以将dao service controller的异常向上抛出 最后交给前端控制器处理
+前端控制器执行异常处理器
+
+异常处理器由我们自定义实现类实现 HandlerExceptionResolver
+然后注册这个实现类,注册为bean
+
+步骤:1编写实现类实现HandlerExceptionResolver
+      2在springmvc.xml文件中注册为bean  注册为bean时不需要id,spring会检测该类实现了HandlerExceptionResolver接口,会在发生异常时调用该类
+
+ 这个接口需要实现一个方法
+ public ModelAndView resolveException(request,response,obj o,e)
+  { 这个obj参数是发生异常的地方,以字符串的形式 返回类型+包名+类+方法名(形参)  
+     发生异常要做的事情
+  } 
+  
+   然后注册<bean class="">
+
+自定义异常:
+   在java方法中手动抛出异常的语句 throw RuntimeException();这里是抛出运行时异常
+   异常也可以是自定义异常,我们自定义一个类继承exception类即可
+    public nullexception extends Exception(){
+    }
+
+   自定义异常的好处是,我们可以在异常处理其中判断该异常的类型然后做出相应的判断
+   怎么判断呢? 通过 instanceof 判断这个对象是不是某个异常的实例即可
+   比如在异常处理器中判断
+   
+       e instanceof  nullexception(类名)
+    instanceof 这个字段可以判断某个对象是否是某个类的实例
+     
+
+
+
+九图片上传(文件上传如何接收)
+    1设置tomcat的虚拟路径 
+        就是设置url路径映射到真实路径上去
+        比如访问http://localhost:8080/pic    就是访问D:/upload文件夹
+        方法1:  
+        在tomcat下conf/server.xml中配置标签(在host父标签中)
+        <Context docBase="真实路径D:/upload"  path="虚拟路径/pic" reloadable="false">
+        方法2:
+        在eclipse点开服务器,点开module模块,点击add extern wen ....也可以添加虚拟路径
+
+
+        这个虚拟路径是指的tomcat虚拟路径,通过访问服务器,如果不想将东西放在服务器文件夹中,可以设置这样的映射完成
+        同理如果一个web项目不想放在服务器中也可以这样设置虚拟映射
+  
+  
+  2在页面上设置input框,类型为file ,还要设置一个enctype="multipart/form-data",  上传图片就是上传文件,处理方式不同而已
+   
+  3在handler上接收文件参数时,需要一个MultiPartFile类型的参数  名字和页面上一致
+   
+   并且由于接收的时一个类型为file的参数,我们需要配置一个MultipartResolver处理器,用来处理file类型到MultiPartFile的转换
+   
+   MultiPartFile处理器的名字是CommmonsMultipartResolver
+   springMvc中配置:
+   <bean id="multipartResolver" class="xxxxx.是CommmonsMultipartResolver">
+   这里的id是固定的,spring通过这个id找到这个实现类
+
+   MultiPartFile的方法有:1getInputStream() 方法 
+                         2getOriginalFilename() 方法 
+                        3transferTo(文件对象) 方法   这个方法可以用于直接保存从页面传过来的文件到指定的文件中去
+      注意在保存到特定的路径中最后的文件命一定要带上后缀,要不然要手动添加,比如111.jpg
+      怎么获得后缀名字?
+      1可以通过getOriginalFilename获得文件原始名字,然后通过字符串切割,通过.切割,获取第二个字符串就是后缀名
+      2可以引入fileuploadjar包,使用里面的工具类FilenameUtils.getExtension(String)也可以获得文件扩展名字
+      
+
+
+十json数据交互(ajax jquery)
+     要注意的是从页面向服务器传递json数据时,是不能直接传递一个json对象或者js对象的,只能传递一个json格式的字符串过去
+     指定预期服务器返回的数据类型(datatype)。
+     使用$.ajax  可以传递一个字符串,或者数组,或者其他值 但是最后都会以值对的形式传递过去
+     使用$.post或者$.get是以值对的方式 
+     无论是哪一种方式最终都是以值对的形式发送过去
+   
+     假如我们直接用$.ajax发送一个json对象过去,那么jQuery 会将这个json解析为值对或则数组的形式,我们想要浏览器能够直接得到一个json格式的变量
+     只能发送一个json数据的字符串过去比如 'json数据'
+
+     总结:
+     前后端json交互是通过json格式的字符串交互的,然后接收字符串后再通过相应平台支持的函数解析这个字符串
+     比如jquery的$.post 设置返回值类型后,java服务端通过jackson将pojo对象转化为jsonobject,再转化为json字符串,最后再输出返回(response)给ajax,
+     然后$.post解析json字符串 将json对象传递给回调函数,如果使用原生ajax,那么需要使用evel函数将json字符串转化为js对象
+     
+     而页面向服务端传递json数据也是传递json格式的字符串,这种情况下$.post或者$get不好使,因为它们都不能设置ContentType
+    
+     步骤:
+     1要实现json交互必须使用jackson 支持 因此 引入jackson对应的多个jar包
+     2在页面中使用$.ajax()  不推荐使用$.post或者$.get
+     
+     $.ajax({
+     url:......,
+     data:......,参数  一个json格式的字符串 这里可以是{key,value},但是由于@requestBody帮我们完成封装,因此不需要key,这里直接写一个字符串
+     ContentType:"application/json;charset=utf-8", 设置的参数是什么类型的
+     type:post, 设置post或者get
+     datatype:json,设置返回的数据的类型  设置了这个jquery帮我们将json字符串转化为json对象
+     success:function(data){  data是返回的数据  success设置回调函数
+     }
+       });
+     
+    3在java后端使用@requestBody注解  
+    
+     @requestBody
+     public User  jsontest(@requestBody User user){     
+     
+       return  user;
+     }
+     引入了jacksonjar包后可以使用该注解,被该注解修饰的参数, springmvc会完成json字符串到pojo类的参数绑定  将json相应的key value绑定到pojo中的成员变量中去
+     
+     同理我们如果想要返回json字符串,如果在servlet中操作会相当麻烦,但是现在引入了jacksonjar包后可以直接在handler方法上面引入 @requestBody注解
+     Springmvc底层完成java对象到json字符串的转换,此时的返回值类型应该是对应的pojo类,但是需要注解,返回给页面的不是pojo而是json字符串
+     
+     需要注意的是json的key需要和pojo的成员变量名字一一对应
+     
+      1以上是接收一个json对象的方式
+      2接收json数组的方式:https://blog.csdn.net/bladeandmaster88/article/details/99697740
+
+
+
+
   
