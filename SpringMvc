@@ -427,7 +427,7 @@
      
       1以上是接收一个json对象的方式
       2接收json数组的方式:https://blog.csdn.net/bladeandmaster88/article/details/99697740
-
+      用list接收json数组可以直接声明一个list,这点和接收普通list不一样,普通list需要声明一个包装类包裹list
 
 
 
