@@ -1,0 +1,25 @@
+一SSM整合
+1导入ssm相应jar包
+2创建配置文件以及属性文件  log4j和jdbc.properties
+3数据库连接池拆用durid 关于durid 用法和c3p0一模一样
+4配置springmvc的前端控制器匹配规则时使用/ 需要设置放过静态资源
+  因为/虽然不会连接jsp但是会拦截静态资源比如js  css html
+  比如在jsp页面中也有访问.js .css文件的连接,而这些访问被拦截后找不到对应的handler就会报错
+  所以需要放行这些访问连接,让它们不经过前端控制器
+  
+  配置标签:
+   <mvc:resource location="配置需要放行的静态资源位置" mapping="配置对那种url放行"> 
+   一般来说是访问静态资源的url需要被放行,这种url可以点击网页源码查看,也可以进入jsp页面或者html页面看一下引入的css或者js的路径
+   然后根据这个路径设置放行的urlmapping  比如mapping="/**/*.html"  对项目下所有路径以html为结尾的url放行
+                                        mapping="/**/*.css"  mapping="/**/*.js"
+                                        mapping="/css/**"  对路径以css开头的所有路径放行,不走前端控制器
+                                        
+5在spring的属性注入中,对普通类型的变量注入时   使用@value("") 可以读取属性文件中的数据
+ 比如@value("${}")  前提时该属性文件在spring的配置文件中使用了标签<context:propertiyplayholder location=""> 
+ 类似于在xml中使用属性文件配置数据库一样
+ 
+ 使用这种方式可以解决硬编码问题,可以通过属性文件修改一些数据而不需要通过改变源代码
+ 需要注意的在那个类中或者哪个xml中使用属性读取,就需要在这个xml或者类对应的配置文件中加上<context:propertiyplayholder location=""> 标签
+ <context:propertiyplayholder location=""> 标签只在当前xml以及在当前xml中注册的bean中生效或者当前xml扫描的组件中生效
+
+6
