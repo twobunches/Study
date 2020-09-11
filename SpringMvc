@@ -431,6 +431,65 @@
           或者前端将json数组包装成一个json对象,然后在后端用一个包装类接收,包装类里面声明一个list对象  注意list变量名要和包装后的json对象的key值对应
           
           这两种方式都需要我们使用@requestBody修饰参数
-          
+                  
+十一restful风格
+Springmvc支持路径变量,在handler上的匹配路径支持变量
+
+比如@requestMapping("/User/{id}.html
+
+假如访问的路径是2.html  那么可以将2赋值给id,并且可以在handler参数的方法中使用注解@pathvariable 获得这个变量
+
+
+十二拦截器
+
+
+拦截器类似于过滤器,只不过是在springmvc.xml文件中配置
+<mvc:interpretors>
+多个拦截器
+    <mvc:interpretor>
+      <mvc:mapping path="/**"> 配置拦截器的拦截规则  **代表拦截所有 
+                对于springmvc的拦截器而言 (**==匹配0或者更多的目录  *=匹配0或者任意数量的字符)
+                比如/**/*.action  拦截以action结尾的url  /**代表任意多个目录
+      <bean class="">配置拦截器类注册为bean
+    </mvc:interpretor>
+</mvc:interpretors>
+
+拦截器类中一共有三个执行时机(对应三个方法):  handler方法执行前   handler方法执行后  页面渲染后
+也就是配置了拦截器后,映射匹配完毕之后,在handler方法执行之前,会执行一次拦截器,在执行完handler方法后执行拦截器,在页面渲染后再执行一次拦截器
+
+
+编写拦截器类 需要实现特定接口 HandlerInterceptor 这个接口中有三个上述三个方法等待实现
+1prehandler  这个方法有个返回值 boolean类型的  true表示放行,也就是可以执行handler方法  false表示不能执行handler方法
+  比如可以在这一个方法中判断用户是否登录等等....
+  或者在这一方法中判断会话是否过期 是否需要重新登录....
+如果返回false的话,就不会执行handler方法,意思就是不会跳转,那么根据实际需求我们可以重定向到一些预定义的页面
+
+2posthandler  没有返回值
+3aftercompletion    没有返回值
+
+
+对于配置了多个拦截器后的执行规则(每个拦截器中的三个方法按照什么顺序执行):
+假如一个url被多个拦截器所拦截
+总结
+prehandler 按拦截器在xml中配置的顺序执行
+posthandler  按拦截器在xml配置的顺序逆序执行
+aftercompletion  按拦截器在xml配置的顺序逆序执行
+
+posthandler 只有当所有拦截器的prehandler返回true时才调用
+aftercompletion 只要当对应的prehandler 返回true时就调用
+
+如果url被多个拦截器拦截,只要有一个拦截器的prehandler返回false就不再执行handler方法
+
+总体的顺序还是按照pre>post>after
+
+
+
+在jsp页面获得项目路径的方法${pagecontext.request.contextPath},在使用jsp和springmvc整合时,跳转到handler方法的路径最好是全路径,不要使用相对路径
+
+
+
+
+
+
 
   
