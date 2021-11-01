@@ -31,7 +31,7 @@ xmlhttp.onreadystatechange=function()
 
 四ajax的post请求  比get复杂一点
 
-
+  
 xmlhttprequest.send("post","",true)
 xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");  加一个content-type头,表示提交的数据是一个经过url编码的表单数据
 ....send("发送的参数");  参数写在send一面
