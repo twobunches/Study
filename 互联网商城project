@@ -1,0 +1,16 @@
+1统一环境配置  原则上一个项目 使用一个文件夹 一个工作空间  赋值一份全新的maven和eclipse到工作空间下
+2在maven中  获得文件使用getresource 或者getralpath这两个api  
+3省略项目名称的配置：  首先要找到tomcat下conf文件夹下的server.xml，在host里面添加<Context docBase="项目名" path="/"/>  
+或者maven配置tomcat插件时  
+
+<plugin>
+					<groupId>org.apache.tomcat.maven</groupId>
+					<artifactId>tomcat7-maven-plugin</artifactId>
+					
+					<configuration>
+				    <port>80</port>
+				    <path>/</path>    这里指当前项目的访问路径 /代表无需项目名即可访问到当前项目   这个插件和实体安装的tomcat有点不一样  要区别开来
+					</configuration>
+				</plugin>
+
+4
